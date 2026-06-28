@@ -236,7 +236,7 @@ function DesktopNavItem({ item, pathname }: { item: NavItem; pathname: string })
             }}
           />
           {item.children.map((child) => {
-            const childActive = pathname === child.href || pathname.startsWith(child.href);
+            const childActive = pathname === child.href;
             return (
               <Link
                 key={child.href}
