@@ -67,11 +67,10 @@ const NAV: NavItem[] = [
     label: "Give",
     href: "/give",
     children: [
-      { label: "Tithe & Offering", href: "/give/tithe" },
-      { label: "Community Outreach", href: "/give/community-outreach" },
+      { label: "Give & Tithe", href: "/give" },
       { label: "Building Fund", href: "/give/building-fund" },
-      { label: "Missionary Fund", href: "/give/missionary" },
-      { label: "My Giving History", href: "/give/history" },
+      { label: "Community Outreach", href: "/give" },
+      { label: "Missionary Fund", href: "/give" },
     ],
   },
   {
