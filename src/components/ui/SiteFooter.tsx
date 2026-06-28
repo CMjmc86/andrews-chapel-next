@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MapPin, Phone, Clock, Mail } from "lucide-react";
+import { MapPin, Phone, Mail } from "lucide-react";
 
 export function SiteFooter() {
   return (
