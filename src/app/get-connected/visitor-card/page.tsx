@@ -1,26 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
 const interestOptions = [
-  "Youth Ministry",
-  "Choir / Worship Music",
-  "Community Outreach",
-  "Bible Study",
-  "Men's Brotherhood",
-  "Women's Circle",
-  "Couples Ministry",
-  "Ushers / Greeters",
-  "Media & Technology",
-  "Other",
+  "Youth Ministry", "Choir / Worship Music", "Community Outreach", "Bible Study",
+  "Men's Brotherhood", "Women's Circle", "Couples Ministry", "Ushers / Greeters",
+  "Media & Technology", "Other",
 ];
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -47,9 +35,8 @@ function validateBirthdate(dateStr: string): string | null {
   if (!dateStr) return null;
   const birth = new Date(dateStr);
   const today = new Date();
-  const minYear = today.getFullYear() - 120;
   if (birth > today) return "Date of birth cannot be in the future.";
-  if (birth.getFullYear() < minYear) return "Please enter a valid date of birth.";
+  if (birth.getFullYear() < today.getFullYear() - 120) return "Please enter a valid date of birth.";
   return null;
 }
 
@@ -59,11 +46,9 @@ export default function VisitorCardPage() {
   const [error, setError] = useState("");
   const [birthdateError, setBirthdateError] = useState("");
   const [form, setForm] = useState({
-    first_name: "", last_name: "", email: "", phone: "",
-    address: "", birthdate: "", home_church: "",
-    how_did_you_hear: "", first_visit: false,
-    interest: "", interest_other: "",
-    prayer_needs: "", follow_up: false,
+    first_name: "", last_name: "", email: "", phone: "", address: "",
+    birthdate: "", home_church: "", how_did_you_hear: "", first_visit: false,
+    interest: "", interest_other: "", prayer_needs: "", follow_up: false,
   });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
@@ -90,33 +75,16 @@ export default function VisitorCardPage() {
     }
     setLoading(true);
     setError("");
-
-    // Build interests string
-    const interests = form.interest === "Other"
-      ? form.interest_other || "Other"
-      : form.interest || null;
-
+    const interests = form.interest === "Other" ? form.interest_other || "Other" : form.interest || null;
     const { error: sbError } = await supabase.from("visitor_cards").insert([{
-      first_name: form.first_name,
-      last_name: form.last_name,
-      email: form.email || null,
-      phone: form.phone || null,
-      address: form.address || null,
-      birthdate: form.birthdate || null,
-      home_church: form.home_church || null,
-      how_did_you_hear: form.how_did_you_hear || null,
-      interests,
-      prayer_needs: form.prayer_needs || null,
-      first_visit: form.first_visit,
-      follow_up: form.follow_up,
+      first_name: form.first_name, last_name: form.last_name,
+      email: form.email || null, phone: form.phone || null,
+      address: form.address || null, birthdate: form.birthdate || null,
+      home_church: form.home_church || null, how_did_you_hear: form.how_did_you_hear || null,
+      interests, prayer_needs: form.prayer_needs || null,
+      first_visit: form.first_visit, follow_up: form.follow_up,
     }]);
-
-    if (sbError) {
-      console.error("Supabase error:", sbError);
-      setError(sbError.message);
-      setLoading(false);
-      return;
-    }
+    if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
     setSubmitted(true);
     setLoading(false);
   }
@@ -126,10 +94,7 @@ export default function VisitorCardPage() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">🙏</div>
         <h2 className="font-serif text-2xl font-bold text-white mb-3">Welcome to the Family!</h2>
-        <p className="text-white/60 leading-relaxed">
-          Thank you for filling out a visitor card. Pastor Kathy and our team will be in touch soon.
-          We are so glad you are here!
-        </p>
+        <p className="text-white/60 leading-relaxed">Thank you for filling out a visitor card. Pastor Kathy and our team will be in touch soon. We are so glad you are here!</p>
       </div>
     );
   }
@@ -137,55 +102,23 @@ export default function VisitorCardPage() {
   return (
     <div>
       <h2 className="font-serif text-2xl font-bold text-white mb-2">New Visitor Card</h2>
-      <p className="text-white/60 mb-8 text-sm leading-relaxed">
-        First time with us? Fill this out and we&apos;ll make sure to welcome you personally.
-      </p>
+      <p className="text-white/60 mb-8 text-sm leading-relaxed">First time with us? Fill this out and we&apos;ll make sure to welcome you personally.</p>
       {error && <p className="text-red-400 text-sm mb-4 p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
       <form onSubmit={handleSubmit} className="space-y-5">
-
-        {/* Name */}
         <div className="grid grid-cols-2 gap-4">
-          <Field label="First Name" required>
-            <input name="first_name" value={form.first_name} onChange={handleChange} required placeholder="First" className={inputCls} />
-          </Field>
-          <Field label="Last Name" required>
-            <input name="last_name" value={form.last_name} onChange={handleChange} required placeholder="Last" className={inputCls} />
-          </Field>
+          <Field label="First Name" required><input name="first_name" value={form.first_name} onChange={handleChange} required placeholder="First" className={inputCls} /></Field>
+          <Field label="Last Name" required><input name="last_name" value={form.last_name} onChange={handleChange} required placeholder="Last" className={inputCls} /></Field>
         </div>
-
-        {/* Contact */}
-        <Field label="Email Address">
-          <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputCls} />
-        </Field>
-        <Field label="Phone Number">
-          <input name="phone" type="tel" value={form.phone} onChange={handlePhone} placeholder="(910) 555-0100" maxLength={14} className={inputCls} />
-        </Field>
-        <Field label="Home Address">
-          <input name="address" value={form.address} onChange={handleChange} placeholder="Street, City, State, ZIP" className={inputCls} />
-        </Field>
-
-        {/* Date of Birth */}
+        <Field label="Email Address"><input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputCls} /></Field>
+        <Field label="Phone Number"><input name="phone" type="tel" value={form.phone} onChange={handlePhone} placeholder="(910) 555-0100" maxLength={14} className={inputCls} /></Field>
+        <Field label="Home Address"><input name="address" value={form.address} onChange={handleChange} placeholder="Street, City, State, ZIP" className={inputCls} /></Field>
         <div>
           <Field label="Date of Birth">
-            <input
-              name="birthdate"
-              type="date"
-              value={form.birthdate}
-              onChange={handleBirthdate}
-              max={new Date().toISOString().split("T")[0]}
-              min={`${new Date().getFullYear() - 120}-01-01`}
-              className={inputCls}
-            />
+            <input name="birthdate" type="date" value={form.birthdate} onChange={handleBirthdate} max={new Date().toISOString().split("T")[0]} min={`${new Date().getFullYear() - 120}-01-01`} className={inputCls} />
           </Field>
           {birthdateError && <p className="text-red-400 text-xs mt-1 ml-1">{birthdateError}</p>}
         </div>
-
-        {/* Home Church */}
-        <Field label="Home Church">
-          <input name="home_church" value={form.home_church} onChange={handleChange} placeholder="Your current or previous church (if any)" className={inputCls} />
-        </Field>
-
-        {/* How did you hear */}
+        <Field label="Home Church"><input name="home_church" value={form.home_church} onChange={handleChange} placeholder="Your current or previous church (if any)" className={inputCls} /></Field>
         <Field label="How did you hear about us?">
           <select name="how_did_you_hear" value={form.how_did_you_hear} onChange={handleChange} className={inputCls}>
             <option value="">Select one...</option>
@@ -197,36 +130,18 @@ export default function VisitorCardPage() {
             <option value="other">Other</option>
           </select>
         </Field>
-
-        {/* Interests dropdown */}
         <Field label="Area of Interest">
           <select name="interest" value={form.interest} onChange={handleChange} className={inputCls}>
             <option value="">Select one...</option>
-            {interestOptions.map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
+            {interestOptions.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
           </select>
         </Field>
-
-        {/* Other interest text field */}
         {form.interest === "Other" && (
           <Field label="Please describe your interest">
-            <input
-              name="interest_other"
-              value={form.interest_other}
-              onChange={handleChange}
-              placeholder="Tell us what interests you..."
-              className={inputCls}
-            />
+            <input name="interest_other" value={form.interest_other} onChange={handleChange} placeholder="Tell us what interests you..." className={inputCls} />
           </Field>
         )}
-
-        {/* Prayer Needs */}
-        <Field label="Prayer Needs">
-          <textarea name="prayer_needs" value={form.prayer_needs} onChange={handleChange} rows={3} placeholder="Share any prayer requests..." className={inputCls} />
-        </Field>
-
-        {/* Checkboxes */}
+        <Field label="Prayer Needs"><textarea name="prayer_needs" value={form.prayer_needs} onChange={handleChange} rows={3} placeholder="Share any prayer requests..." className={inputCls} /></Field>
         <div className="flex items-center gap-3">
           <input type="checkbox" name="first_visit" id="first_visit" checked={form.first_visit} onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />
           <label htmlFor="first_visit" className="text-sm text-white/70">This is my first visit to Andrews Chapel</label>
@@ -235,13 +150,7 @@ export default function VisitorCardPage() {
           <input type="checkbox" name="follow_up" id="follow_up" checked={form.follow_up} onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />
           <label htmlFor="follow_up" className="text-sm text-white/70">I would like someone to follow up with me</label>
         </div>
-
-        <button
-          type="submit"
-          disabled={loading || !!birthdateError}
-          className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60"
-          style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}
-        >
+        <button type="submit" disabled={loading || !!birthdateError} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
           {loading ? "Submitting..." : "Submit Visitor Card"}
         </button>
       </form>

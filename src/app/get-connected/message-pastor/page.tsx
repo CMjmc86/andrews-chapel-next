@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
@@ -34,10 +29,7 @@ export default function MessagePastorPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    first_name: "", last_name: "", email: "", phone: "",
-    subject: "", message: "", anonymous: false,
-  });
+  const [form, setForm] = useState({ first_name: "", last_name: "", email: "", phone: "", subject: "", message: "", anonymous: false });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const target = e.target;
@@ -56,18 +48,10 @@ export default function MessagePastorPage() {
     const { error: sbError } = await supabase.from("pastor_messages").insert([{
       first_name: form.anonymous ? null : form.first_name,
       last_name: form.anonymous ? null : form.last_name,
-      email: form.email,
-      phone: form.phone || null,
-      subject: form.subject || null,
-      message: form.message,
-      anonymous: form.anonymous,
+      email: form.email, phone: form.phone || null,
+      subject: form.subject || null, message: form.message, anonymous: form.anonymous,
     }]);
-    if (sbError) {
-      console.error("Supabase error:", sbError);
-      setError(sbError.message);
-      setLoading(false);
-      return;
-    }
+    if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
     setSubmitted(true);
     setLoading(false);
   }
@@ -77,10 +61,7 @@ export default function MessagePastorPage() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">✉️</div>
         <h2 className="font-serif text-2xl font-bold text-white mb-3">Message Sent!</h2>
-        <p className="text-white/60 leading-relaxed">
-          Pastor Kathy has received your message and will respond personally. If your matter is
-          urgent, please call the church office at (910) 893-5162.
-        </p>
+        <p className="text-white/60 leading-relaxed">Pastor Kathy has received your message and will respond personally. If your matter is urgent, please call the church office at (910) 893-5162.</p>
       </div>
     );
   }
@@ -88,28 +69,17 @@ export default function MessagePastorPage() {
   return (
     <div>
       <h2 className="font-serif text-2xl font-bold text-white mb-2">Message Pastor Kathy</h2>
-      <p className="text-white/60 mb-8 text-sm leading-relaxed">
-        This message is completely private. Only Pastor Kathy will see your message.
-        She personally responds to each one.
-      </p>
+      <p className="text-white/60 mb-8 text-sm leading-relaxed">This message is completely private. Only Pastor Kathy will see your message. She personally responds to each one.</p>
       {error && <p className="text-red-400 text-sm mb-4 p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
       <form onSubmit={handleSubmit} className="space-y-5">
         {!form.anonymous && (
           <div className="grid grid-cols-2 gap-4">
-            <Field label="First Name" required>
-              <input name="first_name" value={form.first_name} onChange={handleChange} required={!form.anonymous} placeholder="First" className={inputCls} />
-            </Field>
-            <Field label="Last Name" required>
-              <input name="last_name" value={form.last_name} onChange={handleChange} required={!form.anonymous} placeholder="Last" className={inputCls} />
-            </Field>
+            <Field label="First Name" required><input name="first_name" value={form.first_name} onChange={handleChange} required={!form.anonymous} placeholder="First" className={inputCls} /></Field>
+            <Field label="Last Name" required><input name="last_name" value={form.last_name} onChange={handleChange} required={!form.anonymous} placeholder="Last" className={inputCls} /></Field>
           </div>
         )}
-        <Field label="Email Address" required>
-          <input name="email" type="email" value={form.email} onChange={handleChange} required placeholder="you@email.com" className={inputCls} />
-        </Field>
-        <Field label="Phone Number">
-          <input name="phone" type="tel" value={form.phone} onChange={handlePhone} placeholder="(910) 555-0100" maxLength={14} className={inputCls} />
-        </Field>
+        <Field label="Email Address" required><input name="email" type="email" value={form.email} onChange={handleChange} required placeholder="you@email.com" className={inputCls} /></Field>
+        <Field label="Phone Number"><input name="phone" type="tel" value={form.phone} onChange={handlePhone} placeholder="(910) 555-0100" maxLength={14} className={inputCls} /></Field>
         <Field label="Subject">
           <select name="subject" value={form.subject} onChange={handleChange} className={inputCls}>
             <option value="">Select one...</option>
@@ -123,9 +93,7 @@ export default function MessagePastorPage() {
             <option value="other">Other</option>
           </select>
         </Field>
-        <Field label="Your Message" required>
-          <textarea name="message" value={form.message} onChange={handleChange} required rows={6} placeholder="Write your message here..." className={inputCls} />
-        </Field>
+        <Field label="Your Message" required><textarea name="message" value={form.message} onChange={handleChange} required rows={6} placeholder="Write your message here..." className={inputCls} /></Field>
         <div className="flex items-center gap-3">
           <input type="checkbox" name="anonymous" id="anonymous" checked={form.anonymous} onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />
           <label htmlFor="anonymous" className="text-sm text-white/70">Send anonymously (name hidden from Pastor)</label>

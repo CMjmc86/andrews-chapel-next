@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
@@ -27,10 +22,7 @@ export default function SubmitPrayerPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    display_name: "", category: "", request: "",
-    is_anonymous: false, is_private: false,
-  });
+  const [form, setForm] = useState({ display_name: "", category: "", request: "", is_anonymous: false, is_private: false });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     const target = e.target;
@@ -44,18 +36,10 @@ export default function SubmitPrayerPage() {
     setError("");
     const { error: sbError } = await supabase.from("prayer_requests").insert([{
       display_name: form.is_anonymous ? null : (form.display_name || null),
-      category: form.category || null,
-      request: form.request,
-      is_anonymous: form.is_anonymous,
-      is_private: form.is_private,
-      approved: false,
+      category: form.category || null, request: form.request,
+      is_anonymous: form.is_anonymous, is_private: form.is_private, approved: false,
     }]);
-    if (sbError) {
-      console.error("Supabase error:", sbError);
-      setError(sbError.message);
-      setLoading(false);
-      return;
-    }
+    if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
     setSubmitted(true);
     setLoading(false);
   }
@@ -65,10 +49,7 @@ export default function SubmitPrayerPage() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">🙏</div>
         <h2 className="font-serif text-2xl font-bold text-white mb-3">Prayer Request Received!</h2>
-        <p className="text-white/60 leading-relaxed">
-          Your request has been sent to Pastor Kathy. The Andrews Chapel prayer team will be
-          lifting you up. You are not alone — we are standing in agreement with you.
-        </p>
+        <p className="text-white/60 leading-relaxed">Your request has been sent to Pastor Kathy. The Andrews Chapel prayer team will be lifting you up. You are not alone — we are standing in agreement with you.</p>
       </div>
     );
   }
@@ -76,16 +57,10 @@ export default function SubmitPrayerPage() {
   return (
     <div>
       <h2 className="font-serif text-2xl font-bold text-white mb-2">Submit a Prayer Request</h2>
-      <p className="text-white/60 mb-8 text-sm leading-relaxed">
-        Your request will go to Pastor Kathy first. She personally reviews each one. Public
-        requests appear on the Prayer Wall after approval. Private requests go only to the
-        pastor and prayer team.
-      </p>
+      <p className="text-white/60 mb-8 text-sm leading-relaxed">Your request will go to Pastor Kathy first. She personally reviews each one. Public requests appear on the Prayer Wall after approval. Private requests go only to the pastor and prayer team.</p>
       {error && <p className="text-red-400 text-sm mb-4 p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
       <form onSubmit={handleSubmit} className="space-y-5">
-        <Field label="Your Name (optional)">
-          <input name="display_name" value={form.display_name} onChange={handleChange} placeholder="Leave blank to post anonymously" className={inputCls} />
-        </Field>
+        <Field label="Your Name (optional)"><input name="display_name" value={form.display_name} onChange={handleChange} placeholder="Leave blank to post anonymously" className={inputCls} /></Field>
         <Field label="Request Type">
           <select name="category" value={form.category} onChange={handleChange} className={inputCls}>
             <option value="">Select one...</option>
@@ -98,9 +73,7 @@ export default function SubmitPrayerPage() {
             <option value="other">Other</option>
           </select>
         </Field>
-        <Field label="Your Prayer Request" required>
-          <textarea name="request" value={form.request} onChange={handleChange} required rows={5} placeholder="Share what is on your heart..." className={inputCls} />
-        </Field>
+        <Field label="Your Prayer Request" required><textarea name="request" value={form.request} onChange={handleChange} required rows={5} placeholder="Share what is on your heart..." className={inputCls} /></Field>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <input type="checkbox" name="is_anonymous" id="is_anonymous" checked={form.is_anonymous} onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />

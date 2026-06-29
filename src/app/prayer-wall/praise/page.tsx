@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Sparkles } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
@@ -47,9 +42,7 @@ export default function PraisePage() {
   const [error, setError] = useState("");
   const [reports, setReports] = useState<PraiseReport[]>([]);
   const [reportsLoading, setReportsLoading] = useState(true);
-  const [form, setForm] = useState({
-    display_name: "", report: "", is_anonymous: false,
-  });
+  const [form, setForm] = useState({ display_name: "", report: "", is_anonymous: false });
 
   useEffect(() => {
     async function fetchReports() {
@@ -58,7 +51,6 @@ export default function PraisePage() {
         .select("id, display_name, report, is_anonymous, created_at")
         .eq("approved", true)
         .order("created_at", { ascending: false });
-
       if (!sbError) setReports(data || []);
       setReportsLoading(false);
     }
@@ -75,52 +67,31 @@ export default function PraisePage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const { error: sbError } = await supabase.from("praise_reports").insert([{
       display_name: form.is_anonymous ? null : (form.display_name || null),
-      report: form.report,
-      is_anonymous: form.is_anonymous,
-      approved: false,
+      report: form.report, is_anonymous: form.is_anonymous, approved: false,
     }]);
-
-    if (sbError) {
-      console.error("Supabase error:", sbError);
-      setError(sbError.message);
-      setLoading(false);
-      return;
-    }
-
+    if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
     setSubmitted(true);
     setLoading(false);
   }
 
   return (
     <div className="space-y-12">
-      {/* Submit form */}
       <div>
         <h2 className="font-serif text-2xl font-bold text-white mb-2">Share a Praise Report</h2>
-        <p className="text-white/60 mb-8 text-sm leading-relaxed">
-          Give God the glory! Share what He has done in your life and let the congregation
-          rejoice with you.
-        </p>
-
+        <p className="text-white/60 mb-8 text-sm leading-relaxed">Give God the glory! Share what He has done in your life and let the congregation rejoice with you.</p>
         {submitted ? (
           <div className="text-center py-8">
             <div className="text-4xl mb-4">✨</div>
             <h3 className="font-serif text-xl font-bold text-white mb-2">Praise the Lord!</h3>
-            <p className="text-white/60 text-sm">
-              Thank you for sharing what God has done! Your report will be posted after pastor review.
-            </p>
+            <p className="text-white/60 text-sm">Thank you for sharing what God has done! Your report will be posted after pastor review.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && <p className="text-red-400 text-sm mb-4 p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
-            <Field label="Your Name">
-              <input name="display_name" value={form.display_name} onChange={handleChange} placeholder="Leave blank to post anonymously" className={inputCls} />
-            </Field>
-            <Field label="What is God doing in your life?" required>
-              <textarea name="report" value={form.report} onChange={handleChange} required rows={5} placeholder="Share what God has done..." className={inputCls} />
-            </Field>
+            <Field label="Your Name"><input name="display_name" value={form.display_name} onChange={handleChange} placeholder="Leave blank to post anonymously" className={inputCls} /></Field>
+            <Field label="What is God doing in your life?" required><textarea name="report" value={form.report} onChange={handleChange} required rows={5} placeholder="Share what God has done..." className={inputCls} /></Field>
             <div className="flex items-center gap-3">
               <input type="checkbox" name="is_anonymous" id="praise_anonymous" checked={form.is_anonymous} onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />
               <label htmlFor="praise_anonymous" className="text-sm text-white/70">Post anonymously</label>
@@ -131,8 +102,6 @@ export default function PraisePage() {
           </form>
         )}
       </div>
-
-      {/* Recent praise reports */}
       <div>
         <h2 className="font-serif text-2xl font-bold text-white mb-6">Recent Praise</h2>
         {reportsLoading ? (
@@ -155,14 +124,9 @@ export default function PraisePage() {
             {reports.map((p) => (
               <div key={p.id} className="p-6" style={cardStyle}>
                 <Sparkles className="h-5 w-5 text-[#D4AF37] mb-3" />
-                <p className="text-white/80 mb-4 whitespace-pre-line leading-relaxed text-sm">
-                  {p.report}
-                </p>
+                <p className="text-white/80 mb-4 whitespace-pre-line leading-relaxed text-sm">{p.report}</p>
                 <p className="text-xs text-white/40">
-                  — {p.is_anonymous || !p.display_name ? "Anonymous" : p.display_name} ·{" "}
-                  {new Date(p.created_at).toLocaleDateString("en-US", {
-                    month: "long", day: "numeric", year: "numeric",
-                  })}
+                  — {p.is_anonymous || !p.display_name ? "Anonymous" : p.display_name} · {new Date(p.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                 </p>
               </div>
             ))}
