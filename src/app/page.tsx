@@ -303,7 +303,7 @@ export default function Home() {
                 Upcoming Events
               </h2>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-3 flex-wrap justify-center sm:justify-start">
               <Link
                 href="/bulletin"
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-full text-[#D4AF37] hover:bg-white/5 transition-colors"
