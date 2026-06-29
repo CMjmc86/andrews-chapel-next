@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 
-const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
@@ -17,11 +23,20 @@ function Field({ label, required, children }: { label: string; required?: boolea
   );
 }
 
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  if (digits.length < 4) return digits.length ? `(${digits}` : "";
+  if (digits.length < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 export default function MessagePastorPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
-    full_name: "", email: "", phone: "", subject: "", message: "", anonymous: false,
+    first_name: "", last_name: "", email: "", phone: "",
+    subject: "", message: "", anonymous: false,
   });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
@@ -30,10 +45,29 @@ export default function MessagePastorPage() {
     setForm((prev) => ({ ...prev, [target.name]: value }));
   }
 
+  function handlePhone(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm((prev) => ({ ...prev, phone: formatPhone(e.target.value) }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
+    setError("");
+    const { error: sbError } = await supabase.from("pastor_messages").insert([{
+      first_name: form.anonymous ? null : form.first_name,
+      last_name: form.anonymous ? null : form.last_name,
+      email: form.email,
+      phone: form.phone || null,
+      subject: form.subject || null,
+      message: form.message,
+      anonymous: form.anonymous,
+    }]);
+    if (sbError) {
+      console.error("Supabase error:", sbError);
+      setError(sbError.message);
+      setLoading(false);
+      return;
+    }
     setSubmitted(true);
     setLoading(false);
   }
@@ -58,15 +92,23 @@ export default function MessagePastorPage() {
         This message is completely private. Only Pastor Kathy will see your message.
         She personally responds to each one.
       </p>
+      {error && <p className="text-red-400 text-sm mb-4 p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
       <form onSubmit={handleSubmit} className="space-y-5">
-        <Field label="Full Name" required>
-          <input name="full_name" value={form.full_name} onChange={handleChange} required placeholder="e.g. Kathy Grace" className={inputCls} />
-        </Field>
+        {!form.anonymous && (
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="First Name" required>
+              <input name="first_name" value={form.first_name} onChange={handleChange} required={!form.anonymous} placeholder="First" className={inputCls} />
+            </Field>
+            <Field label="Last Name" required>
+              <input name="last_name" value={form.last_name} onChange={handleChange} required={!form.anonymous} placeholder="Last" className={inputCls} />
+            </Field>
+          </div>
+        )}
         <Field label="Email Address" required>
           <input name="email" type="email" value={form.email} onChange={handleChange} required placeholder="you@email.com" className={inputCls} />
         </Field>
         <Field label="Phone Number">
-          <input name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="(910) 555-0100" className={inputCls} />
+          <input name="phone" type="tel" value={form.phone} onChange={handlePhone} placeholder="(910) 555-0100" maxLength={14} className={inputCls} />
         </Field>
         <Field label="Subject">
           <select name="subject" value={form.subject} onChange={handleChange} className={inputCls}>
@@ -86,7 +128,7 @@ export default function MessagePastorPage() {
         </Field>
         <div className="flex items-center gap-3">
           <input type="checkbox" name="anonymous" id="anonymous" checked={form.anonymous} onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />
-          <label htmlFor="anonymous" className="text-sm text-white/70">Send anonymously</label>
+          <label htmlFor="anonymous" className="text-sm text-white/70">Send anonymously (name hidden from Pastor)</label>
         </div>
         <button type="submit" disabled={loading} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
           {loading ? "Sending..." : "Send Message"}

@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 
-const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
@@ -20,8 +26,10 @@ function Field({ label, required, children }: { label: string; required?: boolea
 export default function SubmitPrayerPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
-    display_name: "", category: "", request: "", is_anonymous: false, is_private: false,
+    display_name: "", category: "", request: "",
+    is_anonymous: false, is_private: false,
   });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
@@ -33,7 +41,21 @@ export default function SubmitPrayerPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
+    setError("");
+    const { error: sbError } = await supabase.from("prayer_requests").insert([{
+      display_name: form.is_anonymous ? null : (form.display_name || null),
+      category: form.category || null,
+      request: form.request,
+      is_anonymous: form.is_anonymous,
+      is_private: form.is_private,
+      approved: false,
+    }]);
+    if (sbError) {
+      console.error("Supabase error:", sbError);
+      setError(sbError.message);
+      setLoading(false);
+      return;
+    }
     setSubmitted(true);
     setLoading(false);
   }
@@ -59,9 +81,10 @@ export default function SubmitPrayerPage() {
         requests appear on the Prayer Wall after approval. Private requests go only to the
         pastor and prayer team.
       </p>
+      {error && <p className="text-red-400 text-sm mb-4 p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
       <form onSubmit={handleSubmit} className="space-y-5">
-        <Field label="Full Name">
-          <input name="display_name" value={form.display_name} onChange={handleChange} placeholder="Your name (leave blank to post anonymously)" className={inputCls} />
+        <Field label="Your Name (optional)">
+          <input name="display_name" value={form.display_name} onChange={handleChange} placeholder="Leave blank to post anonymously" className={inputCls} />
         </Field>
         <Field label="Request Type">
           <select name="category" value={form.category} onChange={handleChange} className={inputCls}>
