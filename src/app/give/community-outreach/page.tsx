@@ -54,7 +54,7 @@ export default function CommunityOutreachPage() {
             <Globe className="w-6 h-6 text-[#D4AF37]" />
           </div>
           <h2 className="font-serif text-2xl font-bold text-white mb-4">
-            Serving Our Neighbors in Jesus' Name
+            Serving Our Neighbors in Jesus&apos; Name
           </h2>
           <p className="text-white/60 leading-relaxed mb-4">
             Andrews Chapel A.M.E. Zion Church believes that the Church is called to be a

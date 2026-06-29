@@ -58,7 +58,7 @@ export default function MissionaryFundPage() {
           </h2>
           <p className="text-white/60 leading-relaxed mb-4">
             The African Methodist Episcopal Zion Church has a rich legacy of missionary work
-            stretching back generations. Known as the "Freedom Church," A.M.E. Zion has always
+            stretching back generations. Known as the &quot;Freedom Church,&quot; A.M.E. Zion has always
             been at the forefront of carrying the Gospel to those who need it most — both at home
             and around the world.
           </p>

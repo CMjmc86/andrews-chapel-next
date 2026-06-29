@@ -84,7 +84,7 @@ export default function GalleryPage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => <PhotoCard key={i} i={i} />)}
+          {Array.from({ length: 12 }).map((_, i) => <PhotoCard key={i} />)}
         </div>
 
         <p className="text-center text-white/30 text-sm mt-10">
