@@ -31,7 +31,7 @@ const cardHover = {
   borderRadius: "0.75rem",
 };
 
-function PhotoCard({ i }: { i: number }) {
+function PhotoCard() {
   const [hovered, setHovered] = useState(false);
   return (
     <div
