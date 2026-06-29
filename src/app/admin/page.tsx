@@ -14,7 +14,7 @@ const supabase = createClient(
 );
 
 type Tab = "prayer" | "praise" | "visitors" | "join" | "messages" | "groups";
-type RowData = Record<string, unknown>;
+type RowData = Record<string, string | number | boolean | null | undefined>;
 
 const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "prayer", label: "Prayer Requests", icon: Heart },
