@@ -126,7 +126,7 @@ export default function SermonsPage() {
           href="https://www.youtube.com/@AndrewsChapelAMEZion"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block bg-[#0033A0] border border-[#D4AF37] text-[#D4AF37] font-bold px-8 py-3 rounded-lg hover:bg-[#0047CC] transition-colors"
+          className="inline-block bg-[#D4AF37] text-[#000D26] font-bold px-8 py-3 rounded-lg hover:bg-[#F0C040] transition-colors"
         >
           Visit Our YouTube Channel
         </a>
