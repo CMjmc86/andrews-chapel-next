@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Heart, Building2, Globe, BookOpen, ArrowRight } from "lucide-react";
 
 const cardStyle = {
-  background: "linear-gradient(135deg, #0d1535, #111a3e)",
+  background: "linear-gradient(135deg, #102460 0%, #0a1840 100%)",
   border: "1px solid rgba(212,175,55,0.15)",
   borderLeft: "4px solid #D4AF37",
   borderRadius: "0.5rem",
@@ -94,7 +94,7 @@ export default function GivePage() {
           <div className="grid sm:grid-cols-2 gap-6 mb-12">
             {givingOptions.map((option) => (
               <div key={option.title} className="rounded-xl overflow-hidden" style={{
-                background: "#0d1535",
+                background: "linear-gradient(135deg, #102460 0%, #0a1840 100%)",
                 border: "1px solid rgba(212,175,55,0.15)",
               }}>
                 {/* Gradient top */}

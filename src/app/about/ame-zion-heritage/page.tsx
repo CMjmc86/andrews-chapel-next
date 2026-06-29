@@ -44,7 +44,7 @@ export default function AMEZionHeritage() {
               key={p.name}
               className="p-4 rounded-lg"
               style={{
-                background: "linear-gradient(135deg, #0d1535, #111a3e)",
+                background: "linear-gradient(135deg, #102460 0%, #0a1840 100%)",
                 border: "1px solid rgba(212,175,55,0.15)",
                 borderLeft: "4px solid #D4AF37",
               }}
@@ -60,7 +60,7 @@ export default function AMEZionHeritage() {
       <div
         className="p-6 rounded-lg"
         style={{
-          background: "linear-gradient(135deg, #0d1535, #111a3e)",
+          background: "linear-gradient(135deg, #102460 0%, #0a1840 100%)",
           border: "1px solid rgba(212,175,55,0.2)",
         }}
       >

@@ -18,7 +18,7 @@ const placeholderBulletins = [
 ];
 
 const cardStyle = {
-  background: "linear-gradient(135deg, #0d1535, #111a3e)",
+  background: "linear-gradient(135deg, #102460 0%, #0a1840 100%)",
   border: "1px solid rgba(212,175,55,0.15)",
   borderLeft: "4px solid #D4AF37",
   borderRadius: "0.5rem",
@@ -62,7 +62,7 @@ export default function BulletinPage() {
               <h2 className="font-serif text-xl font-bold text-white">Latest Bulletin</h2>
             </div>
             <div className="p-8 rounded-xl" style={{
-              background: "linear-gradient(135deg, #0d1535, #111a3e)",
+              background: "linear-gradient(135deg, #102460 0%, #0a1840 100%)",
               border: "1px solid rgba(212,175,55,0.25)",
             }}>
               <div className="flex items-center gap-2 text-xs text-white/40 mb-3">

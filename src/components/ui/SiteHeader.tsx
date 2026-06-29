@@ -69,8 +69,8 @@ const NAV: NavItem[] = [
     children: [
       { label: "Give & Tithe", href: "/give" },
       { label: "Building Fund", href: "/give/building-fund" },
-      { label: "Community Outreach", href: "/give" },
-      { label: "Missionary Fund", href: "/give" },
+      { label: "Community Outreach", href: "/give/community-outreach" },
+      { label: "Missionary Fund", href: "/give/missionary-fund" },
     ],
   },
   {

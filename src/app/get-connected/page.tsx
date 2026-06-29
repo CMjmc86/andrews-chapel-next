@@ -37,7 +37,7 @@ export default function GetConnectedPage() {
           href={item.href}
           className="group p-7 rounded-xl transition-all duration-200 hover:-translate-y-1"
           style={{
-            background: "linear-gradient(135deg, #0d1535, #111a3e)",
+            background: "linear-gradient(135deg, #102460 0%, #0a1840 100%)",
             border: "1px solid rgba(212,175,55,0.15)",
             boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
           }}
