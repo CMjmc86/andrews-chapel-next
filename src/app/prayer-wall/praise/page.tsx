@@ -67,11 +67,20 @@ export default function PraisePage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const { error: sbError } = await supabase.from("praise_reports").insert([{
+    const payload = {
       display_name: form.is_anonymous ? null : (form.display_name || null),
       report: form.report, is_anonymous: form.is_anonymous, approved: false,
-    }]);
+    };
+    const { error: sbError } = await supabase.from("praise_reports").insert([payload]);
     if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
+
+    // Fire email notification — don't block success on this
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "praise_report", data: payload }),
+    }).catch((err) => console.error("Notification error:", err));
+
     setSubmitted(true);
     setLoading(false);
   }

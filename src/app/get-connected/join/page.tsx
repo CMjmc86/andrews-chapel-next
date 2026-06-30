@@ -78,14 +78,23 @@ export default function JoinPage() {
     const ministry_interests = form.ministry_interest === "Other"
       ? form.ministry_interest_other || "Other"
       : form.ministry_interest || null;
-    const { error: sbError } = await supabase.from("join_applications").insert([{
+    const payload = {
       first_name: form.first_name, last_name: form.last_name, email: form.email,
       phone: form.phone || null, birthdate: form.birthdate || null,
       address: form.address || null, how_joining: form.how_joining || null,
       previous_church: form.previous_church || null, baptized: form.baptized,
       ministry_interests, testimony: form.testimony || null, notes: form.notes || null,
-    }]);
+    };
+    const { error: sbError } = await supabase.from("join_applications").insert([payload]);
     if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
+
+    // Fire email notification — don't block success on this
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "membership", data: payload }),
+    }).catch((err) => console.error("Notification error:", err));
+
     setSubmitted(true);
     setLoading(false);
   }

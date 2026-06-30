@@ -34,12 +34,21 @@ export default function SubmitPrayerPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const { error: sbError } = await supabase.from("prayer_requests").insert([{
+    const payload = {
       display_name: form.is_anonymous ? null : (form.display_name || null),
       category: form.category || null, request: form.request,
       is_anonymous: form.is_anonymous, is_private: form.is_private, approved: false,
-    }]);
+    };
+    const { error: sbError } = await supabase.from("prayer_requests").insert([payload]);
     if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
+
+    // Fire email notification — don't block success on this
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "prayer_request", data: payload }),
+    }).catch((err) => console.error("Notification error:", err));
+
     setSubmitted(true);
     setLoading(false);
   }

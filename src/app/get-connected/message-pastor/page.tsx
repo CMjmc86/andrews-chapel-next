@@ -45,13 +45,22 @@ export default function MessagePastorPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const { error: sbError } = await supabase.from("pastor_messages").insert([{
+    const payload = {
       first_name: form.anonymous ? null : form.first_name,
       last_name: form.anonymous ? null : form.last_name,
       email: form.email, phone: form.phone || null,
       subject: form.subject || null, message: form.message, anonymous: form.anonymous,
-    }]);
+    };
+    const { error: sbError } = await supabase.from("pastor_messages").insert([payload]);
     if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
+
+    // Fire email notification — don't block success on this
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "message_pastor", data: payload }),
+    }).catch((err) => console.error("Notification error:", err));
+
     setSubmitted(true);
     setLoading(false);
   }

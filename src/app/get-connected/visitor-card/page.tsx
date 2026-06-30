@@ -76,15 +76,23 @@ export default function VisitorCardPage() {
     setLoading(true);
     setError("");
     const interests = form.interest === "Other" ? form.interest_other || "Other" : form.interest || null;
-    const { error: sbError } = await supabase.from("visitor_cards").insert([{
+    const payload = {
       first_name: form.first_name, last_name: form.last_name,
       email: form.email || null, phone: form.phone || null,
       address: form.address || null, birthdate: form.birthdate || null,
       home_church: form.home_church || null, how_did_you_hear: form.how_did_you_hear || null,
       interests, prayer_needs: form.prayer_needs || null,
       first_visit: form.first_visit, follow_up: form.follow_up,
-    }]);
+    };
+    const { error: sbError } = await supabase.from("visitor_cards").insert([payload]);
     if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
+
+    // Fire email notification — don't block success on this
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "visitor_card", data: payload }),
+    }).catch((err) => console.error("Notification error:", err));
     setSubmitted(true);
     setLoading(false);
   }

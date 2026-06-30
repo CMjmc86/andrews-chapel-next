@@ -52,12 +52,21 @@ export default function ConnectGroupsPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const { error: sbError } = await supabase.from("connect_group_signups").insert([{
+    const payload = {
       group_name: form.group_name, first_name: form.first_name, last_name: form.last_name,
       email: form.email || null, phone: form.phone || null,
       contact_preference: form.contact_preference || null, notes: form.notes || null,
-    }]);
+    };
+    const { error: sbError } = await supabase.from("connect_group_signups").insert([payload]);
     if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
+
+    // Fire email notification — don't block success on this
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "connect_group", data: payload }),
+    }).catch((err) => console.error("Notification error:", err));
+
     setSubmitted(true);
     setLoading(false);
   }
