@@ -5,6 +5,8 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const STAFF_EMAIL = "cmjmctech@gmail.com"; // TODO: switch to contact@andrewschapelame.org once domain is verified
 const FROM_ADDRESS = "Andrews Chapel <onboarding@resend.dev>"; // TODO: switch to your domain once verified
 
+type FormData = Record<string, string | number | boolean | null | undefined>;
+
 type NotifyPayload = {
   type:
     | "visitor_card"
@@ -13,26 +15,26 @@ type NotifyPayload = {
     | "connect_group"
     | "prayer_request"
     | "praise_report";
-  data: Record<string, any>;
+  data: FormData;
 };
 
-const STAFF_SUBJECTS: Record<NotifyPayload["type"], (d: any) => string> = {
+const STAFF_SUBJECTS: Record<NotifyPayload["type"], (d: FormData) => string> = {
   visitor_card: (d) => `New Visitor Card: ${d.first_name} ${d.last_name}`,
   membership: (d) => `New Membership Application: ${d.first_name} ${d.last_name}`,
-  message_pastor: (d) => `New Message for the Pastor: ${d.first_name ?? ""} ${d.last_name ?? ""}`.trim(),
+  message_pastor: (d) => `New Message for the Pastor: ${String(d.first_name ?? "")} ${String(d.last_name ?? "")}`.trim(),
   connect_group: (d) => `New Connect Group Signup: ${d.first_name} ${d.last_name}`,
   prayer_request: (d) => `New Prayer Request: ${d.display_name ?? "Anonymous"}`,
   praise_report: (d) => `New Praise Report: ${d.display_name ?? "Anonymous"}`,
 };
 
-function buildStaffHtml(type: NotifyPayload["type"], d: Record<string, any>) {
+function buildStaffHtml(type: NotifyPayload["type"], d: FormData): string {
   const rows = Object.entries(d)
     .map(([key, value]) => {
       const label = key
         .replace(/_/g, " ")
         .replace(/\b\w/g, (c) => c.toUpperCase());
       const display =
-        typeof value === "boolean" ? (value ? "Yes" : "No") : value || "—";
+        typeof value === "boolean" ? (value ? "Yes" : "No") : value ?? "—";
       return `<p><strong>${label}:</strong> ${display}</p>`;
     })
     .join("");
@@ -47,8 +49,8 @@ function buildStaffHtml(type: NotifyPayload["type"], d: Record<string, any>) {
   return `<h2>${titleMap[type]}</h2>${rows}`;
 }
 
-async function sendStaffEmail(type: NotifyPayload["type"], d: Record<string, any>) {
-  return resend.emails.send({
+async function sendStaffEmail(type: NotifyPayload["type"], d: FormData): Promise<void> {
+  await resend.emails.send({
     from: FROM_ADDRESS,
     to: STAFF_EMAIL,
     subject: STAFF_SUBJECTS[type](d),
@@ -56,11 +58,11 @@ async function sendStaffEmail(type: NotifyPayload["type"], d: Record<string, any
   });
 }
 
-async function sendVisitorThankYou(d: Record<string, any>) {
+async function sendVisitorThankYou(d: FormData): Promise<void> {
   if (!d.email) return;
   await resend.emails.send({
     from: FROM_ADDRESS,
-    to: d.email,
+    to: String(d.email),
     subject: "Thank You for Visiting Andrews Chapel!",
     html: `
       <h2>Thank You, ${d.first_name}!</h2>
@@ -72,11 +74,11 @@ async function sendVisitorThankYou(d: Record<string, any>) {
   });
 }
 
-async function sendMembershipWelcome(d: Record<string, any>) {
+async function sendMembershipWelcome(d: FormData): Promise<void> {
   if (!d.email) return;
   await resend.emails.send({
     from: FROM_ADDRESS,
-    to: d.email,
+    to: String(d.email),
     subject: "Welcome to the Andrews Chapel Family!",
     html: `
       <h2>Welcome, ${d.first_name}!</h2>
@@ -87,9 +89,10 @@ async function sendMembershipWelcome(d: Record<string, any>) {
   });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<NextResponse> {
   try {
-    const { type, data } = (await req.json()) as NotifyPayload;
+    const body = (await req.json()) as NotifyPayload;
+    const { type, data } = body;
 
     if (!type || !data) {
       return NextResponse.json({ success: false, error: "Missing type or data" }, { status: 400 });
