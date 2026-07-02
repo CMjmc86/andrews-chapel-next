@@ -16,8 +16,8 @@ type AdminUser = {
   id: string;
   user_id: string;
   role: Role;
-  created_at: string;
   email?: string;
+  created_at: string;
 };
 
 const ROLE_LABELS: Record<Role, string> = {
@@ -78,17 +78,13 @@ export default function RolesPage() {
       .from("admin_roles")
       .select("*")
       .order("created_at", { ascending: true });
-    
-    if (data) {
-      // Fetch emails from auth.users via a server call would be ideal,
-      // but for now we show user_id truncated
-      setAdmins(data as AdminUser[]);
-    }
+    if (data) setAdmins(data as AdminUser[]);
     setLoading(false);
   }, []);
 
   const checkAuth = useCallback(async () => {
     const role = await getUserRole();
+    console.log("Role detected:", role);
     if (!role) { router.push("/auth"); return; }
     if (!canManageRoles(role)) { router.push("/admin"); return; }
     setUserRole(role);
@@ -103,18 +99,11 @@ export default function RolesPage() {
     setAddLoading(true);
     setAddError("");
     setAddSuccess("");
-
-    // Look up user by email using admin_roles join — 
-    // We need the user's UUID from their email. 
-    // Since we can't query auth.users directly from client, 
-    // we'll use a Supabase RPC or prompt for user_id.
-    // For now, call our API route to handle this server-side.
     const res = await fetch("/api/admin/add-role", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: newEmail, role: newRole }),
     });
-
     const result = await res.json();
     if (!res.ok || !result.success) {
       setAddError(result.error || "Failed to add user. Make sure they have an existing account.");
@@ -143,7 +132,6 @@ export default function RolesPage() {
 
   return (
     <main className="min-h-screen bg-[#000D26] text-white">
-      {/* Header */}
       <header
         className="px-6 py-4 flex items-center justify-between"
         style={{ borderBottom: "1px solid rgba(212,175,55,0.15)", background: "rgba(16,36,96,0.5)" }}
@@ -169,8 +157,6 @@ export default function RolesPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-
-        {/* Add User Form */}
         {showAddForm && (
           <div className="p-6 rounded-xl" style={cardStyle}>
             <h2 className="font-serif text-lg font-bold text-white mb-4">Add Admin User</h2>
@@ -225,7 +211,6 @@ export default function RolesPage() {
           </div>
         )}
 
-        {/* Role Legend */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {(Object.keys(ROLE_LABELS) as Role[]).map((role) => {
             const colors = ROLE_COLORS[role];
@@ -244,7 +229,6 @@ export default function RolesPage() {
           })}
         </div>
 
-        {/* Admin Users List */}
         <div>
           <h2 className="font-serif text-lg font-bold text-white mb-4">Admin Users ({admins.length})</h2>
           {loading ? (
@@ -267,11 +251,12 @@ export default function RolesPage() {
                       <RoleBadge role={admin.role} />
                       <p className="text-white/25 text-xs">Added {formatDate(admin.created_at)}</p>
                     </div>
-                    <p className="text-white/50 text-xs font-mono">User ID: {admin.user_id.slice(0, 16)}...</p>
+                    <p className="text-white/60 text-sm">
+                      {admin.email || `User ID: ${admin.user_id.slice(0, 16)}...`}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    {/* Change role — can't change your own role or other super_admins */}
                     <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
                       <select
                         value={admin.role}
@@ -285,7 +270,6 @@ export default function RolesPage() {
                       </select>
                     </div>
 
-                    {/* Delete */}
                     {confirmDelete === admin.id ? (
                       <div className="flex gap-2">
                         <button

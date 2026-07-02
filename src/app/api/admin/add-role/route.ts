@@ -47,7 +47,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Insert new role
     const { error: insertError } = await supabaseAdmin
       .from("admin_roles")
-      .insert([{ user_id: user.id, role }]);
+      .insert([{ user_id: user.id, role, email}]);
 
     if (insertError) {
       return NextResponse.json({ success: false, error: insertError.message }, { status: 500 });
