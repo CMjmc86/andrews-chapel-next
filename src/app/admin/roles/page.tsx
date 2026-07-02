@@ -84,7 +84,6 @@ export default function RolesPage() {
 
   const checkAuth = useCallback(async () => {
     const role = await getUserRole();
-    console.log("Role detected:", role);
     if (!role) { router.push("/auth"); return; }
     if (!canManageRoles(role)) { router.push("/admin"); return; }
     setUserRole(role);
