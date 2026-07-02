@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
+
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Heart, Sparkles, Users, UserPlus, MessageSquare,
-  CheckCircle, XCircle, LogOut, Mail, Trash2
+  CheckCircle, XCircle, LogOut, Mail, Trash2, Shield 
 } from "lucide-react";
 
 const supabase = createClient(
@@ -160,6 +162,9 @@ export default function AdminPage() {
               {pendingCount} pending
             </span>
           )}
+          <Link href="/admin/roles" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+            <Shield className="w-4 h-4" /> Roles
+          </Link>
           <button
             onClick={handleSignOut}
             className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors"
