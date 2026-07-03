@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
-
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Heart, Sparkles, Users, UserPlus, MessageSquare,
-  CheckCircle, XCircle, LogOut, Mail, Trash2, Shield 
+  CheckCircle, XCircle, LogOut, Mail, Trash2, Shield,
+  ClipboardList, X
 } from "lucide-react";
+import { getUserRole, canAssignTasks, canManageRoles, type Role } from "@/lib/roles";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,6 +18,13 @@ const supabase = createClient(
 
 type Tab = "prayer" | "praise" | "visitors" | "join" | "messages" | "groups";
 type RowData = Record<string, string | number | boolean | null | undefined>;
+
+type Leader = {
+  id: string;
+  user_id: string;
+  email: string;
+  role: Role;
+};
 
 const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: "prayer", label: "Prayer Requests", icon: Heart },
@@ -51,20 +59,7 @@ const deletedCardStyle = {
   opacity: 0.65,
 };
 
-function Badge({ approved }: { approved: boolean }) {
-  return (
-    <span
-      className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full font-semibold"
-      style={{
-        background: approved ? "rgba(34,197,94,0.15)" : "rgba(251,191,36,0.15)",
-        color: approved ? "#22c55e" : "#fbbf24",
-        border: `1px solid ${approved ? "rgba(34,197,94,0.3)" : "rgba(251,191,36,0.3)"}`,
-      }}
-    >
-      {approved ? "Approved" : "Pending"}
-    </span>
-  );
-}
+const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -81,7 +76,16 @@ export default function AdminPage() {
   const [data, setData] = useState<Record<string, RowData[]>>({});
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
+  const [userRole, setUserRole] = useState<Role | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [leaders, setLeaders] = useState<Leader[]>([]);
+
+  // Task assignment modal state
+  const [assigningRow, setAssigningRow] = useState<RowData | null>(null);
+  const [taskForm, setTaskForm] = useState({ title: "", description: "", assigned_to: "", due_date: "" });
+  const [taskLoading, setTaskLoading] = useState(false);
+  const [taskSuccess, setTaskSuccess] = useState("");
+  const [taskError, setTaskError] = useState("");
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -104,16 +108,27 @@ export default function AdminPage() {
     setLoading(false);
   }, []);
 
+  const fetchLeaders = useCallback(async () => {
+    const { data: leadersData } = await supabase
+      .from("admin_roles")
+      .select("*")
+      .in("role", ["leader", "pastor", "tech_admin"]);
+    setLeaders((leadersData as Leader[]) || []);
+  }, []);
+
   const checkAuth = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { router.push("/auth"); return; }
     setUserEmail(session.user.email || "");
+    const role = await getUserRole();
+    setUserRole(role);
   }, [router]);
 
   useEffect(() => {
     checkAuth();
     fetchAll();
-  }, [checkAuth, fetchAll]);
+    fetchLeaders();
+  }, [checkAuth, fetchAll, fetchLeaders]);
 
   async function toggleApproval(table: string, id: string, current: boolean) {
     await supabase.from(table).update({ approved: !current }).eq("id", id);
@@ -136,6 +151,74 @@ export default function AdminPage() {
     router.push("/auth");
   }
 
+  function openAssignTask(row: RowData) {
+    const name = row.first_name
+      ? `${row.first_name} ${row.last_name || ""}`
+      : row.display_name || "Submission";
+    setAssigningRow(row);
+    setTaskForm({
+      title: `Follow up with ${name}`,
+      description: "",
+      assigned_to: "",
+      due_date: "",
+    });
+    setTaskSuccess("");
+    setTaskError("");
+  }
+
+  async function handleAssignTask() {
+    if (!taskForm.assigned_to || !taskForm.title) {
+      setTaskError("Please fill in the title and select a leader.");
+      return;
+    }
+    setTaskLoading(true);
+    setTaskError("");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const assignedLeader = leaders.find((l) => l.user_id === taskForm.assigned_to);
+
+    const { error: insertError } = await supabase.from("tasks").insert([{
+      title: taskForm.title,
+      description: taskForm.description || null,
+      assigned_to: taskForm.assigned_to,
+      assigned_by: session?.user.id,
+      assigned_to_email: assignedLeader?.email || null,
+      assigned_by_email: session?.user.email || null,
+      related_table: tableMap[activeTab],
+      related_id: assigningRow?.id as string,
+      status: "pending",
+      due_date: taskForm.due_date || null,
+    }]);
+
+    if (insertError) {
+      setTaskError(insertError.message);
+      setTaskLoading(false);
+      return;
+    }
+
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "task_assigned",
+        data: {
+          title: taskForm.title,
+          description: taskForm.description || null,
+          assigned_to_email: assignedLeader?.email || null,
+          assigned_by_email: session?.user.email || null,
+          due_date: taskForm.due_date || null,
+        },
+      }),
+    }).catch((err) => console.error("Notification error:", err));
+
+    setTaskSuccess(`Task assigned to ${assignedLeader?.email || "leader"} successfully.`);
+    setTaskLoading(false);
+    setTimeout(() => {
+      setAssigningRow(null);
+      setTaskSuccess("");
+    }, 2000);
+  }
+
   const allCurrent = data[activeTab] || [];
   const activeRecords = allCurrent.filter((r) => !r.deleted_at);
   const deletedRecords = allCurrent.filter((r) => r.deleted_at);
@@ -147,6 +230,72 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-[#000D26] text-white">
+      {/* Task Assignment Modal */}
+      {assigningRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.7)" }}>
+          <div className="w-full max-w-lg rounded-2xl p-6 space-y-4" style={cardStyle}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-serif text-lg font-bold text-white">Assign Task</h2>
+              <button onClick={() => setAssigningRow(null)} className="text-white/40 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {taskError && <p className="text-red-400 text-sm p-3 rounded-lg bg-red-400/10 border border-red-400/30">{taskError}</p>}
+            {taskSuccess && <p className="text-green-400 text-sm p-3 rounded-lg bg-green-400/10 border border-green-400/30">{taskSuccess}</p>}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Task Title</label>
+                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+                  <input value={taskForm.title} onChange={(e) => setTaskForm((p) => ({ ...p, title: e.target.value }))} placeholder="Task title..." className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Details / Instructions</label>
+                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+                  <textarea value={taskForm.description} onChange={(e) => setTaskForm((p) => ({ ...p, description: e.target.value }))} rows={3} placeholder="What should the leader do?" className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Assign To</label>
+                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+                  <select value={taskForm.assigned_to} onChange={(e) => setTaskForm((p) => ({ ...p, assigned_to: e.target.value }))} className={inputCls}>
+                    <option value="">Select a leader...</option>
+                    {leaders.map((l) => (
+                      <option key={l.user_id} value={l.user_id} style={{ background: "#0a1840" }}>
+                        {l.email} ({l.role.replace("_", " ")})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Due Date (optional)</label>
+                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+                  <input type="date" value={taskForm.due_date} onChange={(e) => setTaskForm((p) => ({ ...p, due_date: e.target.value }))} className={inputCls} />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleAssignTask}
+                  disabled={taskLoading}
+                  className="px-6 py-2.5 rounded-full text-sm font-semibold disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)", color: "#000D26" }}
+                >
+                  {taskLoading ? "Assigning..." : "Assign Task"}
+                </button>
+                <button
+                  onClick={() => setAssigningRow(null)}
+                  className="px-6 py-2.5 rounded-full text-sm font-semibold"
+                  style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header
         className="px-6 py-4 flex items-center justify-between"
@@ -162,9 +311,14 @@ export default function AdminPage() {
               {pendingCount} pending
             </span>
           )}
-          <Link href="/admin/roles" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
-            <Shield className="w-4 h-4" /> Roles
+          <Link href="/admin/tasks" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+            <ClipboardList className="w-4 h-4" /> Tasks
           </Link>
+          {canManageRoles(userRole) && (
+            <Link href="/admin/roles" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+              <Shield className="w-4 h-4" /> Roles
+            </Link>
+          )}
           <button
             onClick={handleSignOut}
             className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors"
@@ -254,13 +408,11 @@ export default function AdminPage() {
                 <div key={id} className="p-6 rounded-xl" style={isDeleted ? deletedCardStyle : cardStyle}>
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex-1 space-y-1">
-
                       {isDeleted && (
                         <p className="text-red-400 text-xs mb-2">
                           🗑 Deleted {formatDate(row.deleted_at as string)}
                         </p>
                       )}
-
                       {(row.first_name || row.display_name) && (
                         <p className="font-serif font-bold text-white text-lg">
                           {row.first_name
@@ -268,7 +420,6 @@ export default function AdminPage() {
                             : (row.display_name as string) || "Anonymous"}
                         </p>
                       )}
-
                       <div className="flex flex-wrap gap-4 text-xs text-white/50">
                         {row.email && <span>✉ {row.email as string}</span>}
                         {row.phone && <span>📞 {row.phone as string}</span>}
@@ -276,17 +427,14 @@ export default function AdminPage() {
                         {row.birthdate && <span>🎂 {row.birthdate as string}</span>}
                         {row.home_church && <span>⛪ {row.home_church as string}</span>}
                       </div>
-
                       {row.request && <p className="text-white/70 text-sm mt-2 leading-relaxed">{row.request as string}</p>}
                       {row.report && <p className="text-white/70 text-sm mt-2 leading-relaxed">{row.report as string}</p>}
                       {row.message && <p className="text-white/70 text-sm mt-2 leading-relaxed">{row.message as string}</p>}
-
                       {row.category && (
                         <span className="inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full text-[#D4AF37] border border-[#D4AF37]/30">
                           {(row.category as string).replace(/_/g, " ")}
                         </span>
                       )}
-
                       {row.how_joining && <p className="text-white/40 text-xs">Joining via: {row.how_joining as string}</p>}
                       {row.group_name && <p className="text-white/40 text-xs">Group: {row.group_name as string}</p>}
                       {row.subject && <p className="text-white/40 text-xs">Subject: {row.subject as string}</p>}
@@ -301,30 +449,37 @@ export default function AdminPage() {
                       {row.first_visit && <p className="text-[#D4AF37] text-xs">⭐ First visit</p>}
                       {row.follow_up && <p className="text-[#D4AF37] text-xs">📬 Requested follow-up</p>}
                       {row.baptized === true && <p className="text-white/40 text-xs">✓ Baptized</p>}
-
                       <p className="text-white/25 text-xs mt-2">{formatDate(row.created_at as string)}</p>
                     </div>
 
                     {/* Action buttons */}
                     <div className="flex flex-col gap-2 shrink-0">
+                      {/* Assign Task */}
+                      {!isDeleted && canAssignTasks(userRole) && (
+                        <button
+                          onClick={() => openAssignTask(row)}
+                          className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                          style={{ background: "rgba(212,175,55,0.1)", color: "#D4AF37", border: "1px solid rgba(212,175,55,0.3)" }}
+                        >
+                          <ClipboardList className="w-3 h-3" /> Assign Task
+                        </button>
+                      )}
+
                       {/* Approve/Unapprove */}
                       {["prayer", "praise"].includes(activeTab) && !isDeleted && (
-                        <div className="flex gap-2 flex-wrap">
-                          <Badge approved={approved} />
-                          <button
-                            onClick={() => toggleApproval(tableMap[activeTab], id, approved)}
-                            className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors"
-                            style={{
-                              background: approved ? "rgba(239,68,68,0.15)" : "rgba(34,197,94,0.15)",
-                              color: approved ? "#ef4444" : "#22c55e",
-                              border: `1px solid ${approved ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`,
-                            }}
-                          >
-                            {approved
-                              ? <><XCircle className="w-3 h-3" /> Unapprove</>
-                              : <><CheckCircle className="w-3 h-3" /> Approve</>}
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => toggleApproval(tableMap[activeTab], id, approved)}
+                          className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg transition-colors"
+                          style={{
+                            background: approved ? "rgba(239,68,68,0.15)" : "rgba(34,197,94,0.15)",
+                            color: approved ? "#ef4444" : "#22c55e",
+                            border: `1px solid ${approved ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`,
+                          }}
+                        >
+                          {approved
+                            ? <><XCircle className="w-3 h-3" /> Unapprove</>
+                            : <><CheckCircle className="w-3 h-3" /> Approve</>}
+                        </button>
                       )}
 
                       {/* Delete / Restore */}

@@ -14,7 +14,9 @@ type NotifyPayload = {
     | "message_pastor"
     | "connect_group"
     | "prayer_request"
-    | "praise_report";
+    | "praise_report"
+    | "task_assigned"
+    | "task_completed";
   data: FormData;
 };
 
@@ -25,6 +27,8 @@ const STAFF_SUBJECTS: Record<NotifyPayload["type"], (d: FormData) => string> = {
   connect_group: (d) => `New Connect Group Signup: ${d.first_name} ${d.last_name}`,
   prayer_request: (d) => `New Prayer Request: ${d.display_name ?? "Anonymous"}`,
   praise_report: (d) => `New Praise Report: ${d.display_name ?? "Anonymous"}`,
+  task_assigned: (d) => `New Task Assigned: ${d.title}`,
+  task_completed: (d) => `Task Completed: ${d.title}`,
 };
 
 function buildStaffHtml(type: NotifyPayload["type"], d: FormData): string {
@@ -45,6 +49,8 @@ function buildStaffHtml(type: NotifyPayload["type"], d: FormData): string {
     connect_group: "New Connect Group Signup",
     prayer_request: "New Prayer Request",
     praise_report: "New Praise Report",
+    task_assigned: "New Task Assigned",
+    task_completed: "Task Completed",
   };
   return `<h2>${titleMap[type]}</h2>${rows}`;
 }
@@ -89,6 +95,40 @@ async function sendMembershipWelcome(d: FormData): Promise<void> {
   });
 }
 
+async function sendTaskAssigned(d: FormData): Promise<void> {
+  if (!d.assigned_to_email) return;
+  await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: String(d.assigned_to_email),
+    subject: `New Task Assigned: ${d.title}`,
+    html: `
+      <h2>You have been assigned a new task</h2>
+      <p><strong>Task:</strong> ${d.title}</p>
+      ${d.description ? `<p><strong>Details:</strong> ${d.description}</p>` : ""}
+      ${d.due_date ? `<p><strong>Due Date:</strong> ${d.due_date}</p>` : ""}
+      <p><strong>Assigned by:</strong> ${d.assigned_by_email}</p>
+      <p style="margin-top:16px;">Please log in to the admin dashboard to view and manage your tasks.</p>
+      <p style="margin-top:24px;">In Christ,<br/>Andrews Chapel AME Church</p>
+    `,
+  });
+}
+
+async function sendTaskCompleted(d: FormData): Promise<void> {
+  if (!d.assigned_by_email) return;
+  await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: String(d.assigned_by_email),
+    subject: `Task Completed: ${d.title}`,
+    html: `
+      <h2>A task has been marked complete</h2>
+      <p><strong>Task:</strong> ${d.title}</p>
+      ${d.description ? `<p><strong>Details:</strong> ${d.description}</p>` : ""}
+      <p><strong>Completed by:</strong> ${d.assigned_to_email}</p>
+      <p style="margin-top:24px;">In Christ,<br/>Andrews Chapel AME Church</p>
+    `,
+  });
+}
+
 export async function POST(req: Request): Promise<NextResponse> {
   try {
     const body = (await req.json()) as NotifyPayload;
@@ -98,12 +138,15 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ success: false, error: "Missing type or data" }, { status: 400 });
     }
 
-    await sendStaffEmail(type, data);
-
-    if (type === "visitor_card") {
-      await sendVisitorThankYou(data);
-    } else if (type === "membership") {
-      await sendMembershipWelcome(data);
+    if (type === "task_assigned") {
+      await sendTaskAssigned(data);
+    } else if (type === "task_completed") {
+      await sendTaskCompleted(data);
+      await sendStaffEmail(type, data);
+    } else {
+      await sendStaffEmail(type, data);
+      if (type === "visitor_card") await sendVisitorThankYou(data);
+      if (type === "membership") await sendMembershipWelcome(data);
     }
 
     return NextResponse.json({ success: true });
