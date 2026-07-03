@@ -81,7 +81,7 @@ function formatTable(table: string | null) {
 export default function TasksPage() {
   const router = useRouter();
   const [userRole, setUserRole] = useState<Role | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  //const [userId, setUserId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all");
@@ -102,7 +102,7 @@ export default function TasksPage() {
     if (!role) { router.push("/auth"); return; }
     setUserRole(role);
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) setUserId(session.user.id);
+    // if (session) setUserId(session.user.id);
   }, [router]);
 
   useEffect(() => {
