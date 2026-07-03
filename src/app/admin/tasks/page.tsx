@@ -81,7 +81,6 @@ function formatTable(table: string | null) {
 export default function TasksPage() {
   const router = useRouter();
   const [userRole, setUserRole] = useState<Role | null>(null);
-  //const [userId, setUserId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "in_progress" | "completed">("all");
@@ -101,8 +100,6 @@ export default function TasksPage() {
     const role = await getUserRole();
     if (!role) { router.push("/auth"); return; }
     setUserRole(role);
-    const { data: { session } } = await supabase.auth.getSession();
-    // if (session) setUserId(session.user.id);
   }, [router]);
 
   useEffect(() => {
@@ -112,13 +109,13 @@ export default function TasksPage() {
 
   async function handleStatusChange(task: Task, newStatus: Task["status"]) {
     setUpdatingId(task.id);
-    const updates: Partial<Task> = {
+    const updates: Record<string, string> = {
       status: newStatus,
       updated_at: new Date().toISOString(),
-    } as Partial<Task>;
+    };
 
     if (newStatus === "completed") {
-      (updates as Record<string, string>).completed_at = new Date().toISOString();
+      updates.completed_at = new Date().toISOString();
     }
 
     await supabase.from("tasks").update(updates).eq("id", task.id);
@@ -144,10 +141,7 @@ export default function TasksPage() {
   }
 
   const isLeader = userRole === "leader";
-  const filteredTasks = tasks.filter((t) => {
-    if (filter !== "all" && t.status !== filter) return false;
-    return true;
-  });
+  const filteredTasks = tasks.filter((t) => filter === "all" || t.status === filter);
 
   const pendingCount = tasks.filter((t) => t.status === "pending").length;
   const inProgressCount = tasks.filter((t) => t.status === "in_progress").length;
@@ -185,7 +179,6 @@ export default function TasksPage() {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: "Pending", count: pendingCount, color: "#fbbf24" },
@@ -199,7 +192,6 @@ export default function TasksPage() {
           ))}
         </div>
 
-        {/* Filter tabs */}
         <div className="flex gap-2 flex-wrap">
           {(["all", "pending", "in_progress", "completed"] as const).map((f) => (
             <button
@@ -217,7 +209,6 @@ export default function TasksPage() {
           ))}
         </div>
 
-        {/* Tasks list */}
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -261,7 +252,6 @@ export default function TasksPage() {
                     </div>
                   </div>
 
-                  {/* Status actions */}
                   {task.status !== "completed" && (
                     <div className="flex gap-2 flex-wrap shrink-0">
                       {task.status === "pending" && (
