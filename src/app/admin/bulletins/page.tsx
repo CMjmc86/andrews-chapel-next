@@ -89,7 +89,7 @@ function BulletinEditor({ content, onChange }: { content: string; onChange: (htm
         <ToolbarButton onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })}>H3</ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")}>• List</ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")}>1. List</ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")}>" Quote</ToolbarButton>
+        <ToolbarButton onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")}>&quot; Quote</ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()}>— Rule</ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().undo().run()}>↩ Undo</ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().redo().run()}>↪ Redo</ToolbarButton>
