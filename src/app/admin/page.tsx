@@ -9,6 +9,7 @@ import {
   CheckCircle, XCircle, LogOut, Mail, Trash2, Shield,
   ClipboardList, X
 } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { getUserRole, canAssignTasks, canManageRoles, type Role } from "@/lib/roles";
 
 const supabase = createClient(
@@ -313,6 +314,9 @@ export default function AdminPage() {
           )}
           <Link href="/admin/tasks" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
             <ClipboardList className="w-4 h-4" /> Tasks
+          </Link>
+          <Link href="/admin/bulletins" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+            <BookOpen className="w-4 h-4" /> Bulletins
           </Link>
           {canManageRoles(userRole) && (
             <Link href="/admin/roles" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
