@@ -81,13 +81,8 @@ function formatDisplayTime(time: string | null) {
   const ampm = hour >= 12 ? "PM" : "AM";
   const displayHour = hour % 12 || 12;
   return `${displayHour}:${m} ${ampm}`;
-}
+}   
 
-function formatCreatedAt(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
-  });
-}
 
 function TimeSelect({
   timeValue, ampmValue, onTimeChange, onAmpmChange,
