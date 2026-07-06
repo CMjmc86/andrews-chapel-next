@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { Turnstile } from "@marsidev/react-turnstile";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
@@ -42,6 +44,8 @@ export default function PraisePage() {
   const [error, setError] = useState("");
   const [reports, setReports] = useState<PraiseReport[]>([]);
   const [reportsLoading, setReportsLoading] = useState(true);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const [form, setForm] = useState({ display_name: "", report: "", is_anonymous: false });
 
   useEffect(() => {
@@ -65,8 +69,24 @@ export default function PraisePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!turnstileToken) { setError("Please complete the security check."); return; }
     setLoading(true);
     setError("");
+
+    const verifyRes = await fetch("/api/verify-turnstile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: turnstileToken }),
+    });
+    const verifyData = await verifyRes.json();
+    if (!verifyData.success) {
+      setError("Security check failed. Please try again.");
+      turnstileRef.current?.reset();
+      setTurnstileToken("");
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       display_name: form.is_anonymous ? null : (form.display_name || null),
       report: form.report, is_anonymous: form.is_anonymous, approved: false,
@@ -74,7 +94,6 @@ export default function PraisePage() {
     const { error: sbError } = await supabase.from("praise_reports").insert([payload]);
     if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
 
-    // Fire email notification — don't block success on this
     fetch("/api/notify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -105,7 +124,16 @@ export default function PraisePage() {
               <input type="checkbox" name="is_anonymous" id="praise_anonymous" checked={form.is_anonymous} onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />
               <label htmlFor="praise_anonymous" className="text-sm text-white/70">Post anonymously</label>
             </div>
-            <button type="submit" disabled={loading} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
+
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+              onSuccess={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken("")}
+              options={{ theme: "dark" }}
+            />
+
+            <button type="submit" disabled={loading || !turnstileToken} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
               {loading ? "Sharing..." : "Share Praise Report"}
             </button>
           </form>

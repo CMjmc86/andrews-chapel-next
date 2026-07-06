@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { Turnstile } from "@marsidev/react-turnstile";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
@@ -38,6 +40,8 @@ export default function ConnectGroupsPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const [form, setForm] = useState({ group_name: "", first_name: "", last_name: "", email: "", phone: "", contact_preference: "", notes: "" });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
@@ -50,8 +54,24 @@ export default function ConnectGroupsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!turnstileToken) { setError("Please complete the security check."); return; }
     setLoading(true);
     setError("");
+
+    const verifyRes = await fetch("/api/verify-turnstile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: turnstileToken }),
+    });
+    const verifyData = await verifyRes.json();
+    if (!verifyData.success) {
+      setError("Security check failed. Please try again.");
+      turnstileRef.current?.reset();
+      setTurnstileToken("");
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       group_name: form.group_name, first_name: form.first_name, last_name: form.last_name,
       email: form.email || null, phone: form.phone || null,
@@ -60,7 +80,6 @@ export default function ConnectGroupsPage() {
     const { error: sbError } = await supabase.from("connect_group_signups").insert([payload]);
     if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
 
-    // Fire email notification — don't block success on this
     fetch("/api/notify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -116,7 +135,16 @@ export default function ConnectGroupsPage() {
           </select>
         </Field>
         <Field label="Anything else you'd like us to know?"><textarea name="notes" value={form.notes} onChange={handleChange} rows={3} placeholder="Questions, schedule constraints, etc." className={inputCls} /></Field>
-        <button type="submit" disabled={loading} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
+
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+          onSuccess={(token) => setTurnstileToken(token)}
+          onExpire={() => setTurnstileToken("")}
+          options={{ theme: "dark" }}
+        />
+
+        <button type="submit" disabled={loading || !turnstileToken} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
           {loading ? "Signing up..." : "Sign Me Up"}
         </button>
       </form>
