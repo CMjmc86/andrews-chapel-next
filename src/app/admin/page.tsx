@@ -8,7 +8,8 @@ import {
   Heart, Sparkles, Users, UserPlus, MessageSquare,
   CheckCircle, XCircle, LogOut, Mail, Trash2, Shield,
   ClipboardList, X,
-  CalendarDays
+  CalendarDays,
+  Video
 } from "lucide-react";
 import { BookOpen } from "lucide-react";
 import { getUserRole, canAssignTasks, canManageRoles, type Role } from "@/lib/roles";
@@ -321,6 +322,9 @@ export default function AdminPage() {
           </Link>
           <Link href="/admin/events" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
             <CalendarDays className="w-4 h-4" /> Events
+          </Link>
+          <Link href="/admin/sermons" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+            <Video className="w-4 h-4" /> Sermons
           </Link>
           {canManageRoles(userRole) && (
             <Link href="/admin/roles" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
