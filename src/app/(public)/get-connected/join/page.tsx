@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Turnstile } from "@marsidev/react-turnstile";
+import type { TurnstileInstance } from "@marsidev/react-turnstile";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
@@ -47,7 +48,7 @@ export default function JoinPage() {
   const [error, setError] = useState("");
   const [birthdateError, setBirthdateError] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
-  const turnstileRef = useRef<{ reset: () => void }>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
   const [form, setForm] = useState({
     first_name: "", last_name: "", email: "", phone: "", birthdate: "",
     address: "", how_joining: "", previous_church: "", baptized: false,
