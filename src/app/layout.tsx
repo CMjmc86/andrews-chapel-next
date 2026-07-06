@@ -1,11 +1,17 @@
+import * as Sentry from '@sentry/nextjs';
 import type { Metadata } from "next";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
 
-export const metadata: Metadata = {
-  title: "Andrews Chapel A.M.E. Zion Church · Bunnlevel, NC",
-  description:
-    "Rooted in Faith. Growing in Love. Serving Together. Sunday Worship at 10 AM. Pastor Kathy Grace.",
-};
+export function generateMetadata(): Metadata {
+  return {
+    title: "Andrews Chapel A.M.E. Zion Church · Bunnlevel, NC",
+    description: "Rooted in Faith. Growing in Love. Serving Together. Sunday Worship at 10 AM. Pastor Kathy Grace.",
+    other: {
+      ...Sentry.getTraceData()
+    }
+  };
+}
 
 export default function RootLayout({
   children,
@@ -28,6 +34,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen flex flex-col">
         {children}
+        <Analytics />
       </body>
     </html>
   );
