@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
@@ -45,6 +46,8 @@ export default function VisitorCardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [birthdateError, setBirthdateError] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef<{ reset: () => void }>(null);
   const [form, setForm] = useState({
     first_name: "", last_name: "", email: "", phone: "", address: "",
     birthdate: "", home_church: "", how_did_you_hear: "", first_visit: false,
@@ -73,8 +76,28 @@ export default function VisitorCardPage() {
       const bdErr = validateBirthdate(form.birthdate);
       if (bdErr) { setBirthdateError(bdErr); return; }
     }
+    if (!turnstileToken) {
+      setError("Please complete the security check.");
+      return;
+    }
     setLoading(true);
     setError("");
+
+    // Verify Turnstile token
+    const verifyRes = await fetch("/api/verify-turnstile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: turnstileToken }),
+    });
+    const verifyData = await verifyRes.json();
+    if (!verifyData.success) {
+      setError("Security check failed. Please try again.");
+      turnstileRef.current?.reset();
+      setTurnstileToken("");
+      setLoading(false);
+      return;
+    }
+
     const interests = form.interest === "Other" ? form.interest_other || "Other" : form.interest || null;
     const payload = {
       first_name: form.first_name, last_name: form.last_name,
@@ -87,12 +110,12 @@ export default function VisitorCardPage() {
     const { error: sbError } = await supabase.from("visitor_cards").insert([payload]);
     if (sbError) { console.error("Supabase error:", sbError); setError(sbError.message); setLoading(false); return; }
 
-    // Fire email notification — don't block success on this
     fetch("/api/notify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type: "visitor_card", data: payload }),
     }).catch((err) => console.error("Notification error:", err));
+
     setSubmitted(true);
     setLoading(false);
   }
@@ -158,7 +181,17 @@ export default function VisitorCardPage() {
           <input type="checkbox" name="follow_up" id="follow_up" checked={form.follow_up} onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />
           <label htmlFor="follow_up" className="text-sm text-white/70">I would like someone to follow up with me</label>
         </div>
-        <button type="submit" disabled={loading || !!birthdateError} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
+
+        {/* Turnstile */}
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+          onSuccess={(token) => setTurnstileToken(token)}
+          onExpire={() => setTurnstileToken("")}
+          options={{ theme: "dark" }}
+        />
+
+        <button type="submit" disabled={loading || !!birthdateError || !turnstileToken} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
           {loading ? "Submitting..." : "Submit Visitor Card"}
         </button>
       </form>
