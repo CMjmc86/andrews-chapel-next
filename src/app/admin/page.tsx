@@ -9,7 +9,8 @@ import {
   CheckCircle, XCircle, LogOut, Mail, Trash2, Shield,
   ClipboardList, X,
   CalendarDays,
-  Video
+  Video,
+  Settings
 } from "lucide-react";
 import { BookOpen } from "lucide-react";
 import { getUserRole, canAssignTasks, canManageRoles, type Role } from "@/lib/roles";
@@ -325,12 +326,15 @@ export default function AdminPage() {
           </Link>
           <Link href="/admin/sermons" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
             <Video className="w-4 h-4" /> Sermons
-          </Link>
+          </Link>          
           {canManageRoles(userRole) && (
             <Link href="/admin/roles" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
               <Shield className="w-4 h-4" /> Roles
             </Link>
           )}
+          <Link href="/admin/settings" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+            <Settings className="w-4 h-4" /> Settings
+          </Link>
           <button
             onClick={handleSignOut}
             className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors"
