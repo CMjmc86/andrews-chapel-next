@@ -108,7 +108,7 @@ export default function PortalDirectoryPage() {
             </p>
           </div>
         </div>
-        <Link href="/" className="text-white/40 hover:text-white transition-colors" title="Back to Home">
+        <Link href="/" className="text-[#D4AF37] hover:opacity-80 transition-opacity" title="Back to Home">
           <Home className="w-5 h-5" />
         </Link>
       </header>

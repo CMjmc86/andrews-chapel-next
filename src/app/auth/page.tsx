@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50transition-all";
 
@@ -93,6 +94,9 @@ export default function AuthPage() {
   return (
     <main className="min-h-dvh bg-[#000D26] text-white flex items-center justify-center px-4">
       <div className="w-full max-w-md">
+        <Link href="/" className="flex items-center gap-1.5 text-white/40 hover:text-[#D4AF37] text-sm mb-6 transition-colors">
+          ← Back to Home
+        </Link>
         <div className="text-center mb-10">
           <div className="w-16 h-16 rounded-full mx-auto mb-4 grid place-items-center" style={{ background: "linear-gradient(135deg, #1A5FE0, #0047CC, #0033A0)" }}>
             <span className="text-[#F0C040] font-bold text-2xl">✛</span>

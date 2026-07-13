@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -10,15 +9,12 @@ import {
   ClipboardList, X,
   CalendarDays,
   Video,
-  Settings
+  Settings,
+  Home
 } from "lucide-react";
 import { BookOpen } from "lucide-react";
 import { getUserRole, canAssignTasks, canManageRoles, type Role } from "@/lib/roles";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase";
 
 type Tab = "prayer" | "praise" | "visitors" | "join" | "messages" |"groups";
 type RowData = Record<string, string | number | boolean | null | undefined>;
@@ -312,9 +308,14 @@ export default function AdminPage() {
         className="px-6 py-4 flex items-center justify-between"
         style={{ borderBottom: "1px solid rgba(212,175,55,0.15)", background: "rgba(16,36,96,0.5)" }}
       >
-        <div>
-          <h1 className="font-serif text-xl font-bold text-white">Admin Dashboard</h1>
-          <p className="text-white/40 text-xs">{userEmail}</p>
+        <div className="flex items-center gap-4">
+          <Link href="/" className="text-[#D4AF37] hover:opacity-80 transition-opacity" title="Back to Home">
+            <Home className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="font-serif text-xl font-bold text-white">Admin Dashboard</h1>
+            <p className="text-white/40 text-xs">{userEmail}</p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           {pendingCount > 0 && (

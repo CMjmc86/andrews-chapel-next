@@ -127,7 +127,7 @@ export default function PortalAccountPage() {
         style={{ borderBottom: "1px solid rgba(212,175,55,0.15)", background: "rgba(16,36,96,0.5)" }}
       >
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-white/40 hover:text-white transition-colors" title="Back to Home">
+          <Link href="/" className="text-[#D4AF37] hover:opacity-80 transition-opacity" title="Back to Home">
             <Home className="w-5 h-5" />
           </Link>
           <div>
