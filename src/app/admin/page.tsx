@@ -20,7 +20,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-type Tab = "prayer" | "praise" | "visitors" | "join" | "messages" | "groups";
+type Tab = "prayer" | "praise" | "visitors" | "join" | "messages" |"groups";
 type RowData = Record<string, string | number | boolean | null | undefined>;
 
 type Leader = {
@@ -30,7 +30,7 @@ type Leader = {
   role: Role;
 };
 
-const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
+const tabs: { id: Tab; label: string; icon: React.ElementType }[] =[
   { id: "prayer", label: "Prayer Requests", icon: Heart },
   { id: "praise", label: "Praise Reports", icon: Sparkles },
   { id: "visitors", label: "Visitor Cards", icon: Users },
@@ -125,6 +125,13 @@ export default function AdminPage() {
     if (!session) { router.push("/auth"); return; }
     setUserEmail(session.user.email || "");
     const role = await getUserRole();
+    if (!role) {
+      // Signed in, but not a staff member with any admin_roles entry.
+      // Sign them out of the staff context and send to the correct login.
+      await supabase.auth.signOut();
+      router.push("/auth");
+      return;
+    }
     setUserRole(role);
   }, [router]);
 
@@ -134,7 +141,7 @@ export default function AdminPage() {
     fetchLeaders();
   }, [checkAuth, fetchAll, fetchLeaders]);
 
-  async function toggleApproval(table: string, id: string, current: boolean) {
+  async function toggleApproval(table: string, id: string, current:boolean) {
     await supabase.from(table).update({ approved: !current }).eq("id", id);
     fetchAll();
   }
@@ -249,19 +256,19 @@ export default function AdminPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Task Title</label>
-                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+                <div style={{ background: "rgba(255,255,255,0.05)",border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
                   <input value={taskForm.title} onChange={(e) => setTaskForm((p) => ({ ...p, title: e.target.value }))} placeholder="Task title..." className={inputCls} />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Details / Instructions</label>
-                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+                <div style={{ background: "rgba(255,255,255,0.05)",border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
                   <textarea value={taskForm.description} onChange={(e) => setTaskForm((p) => ({ ...p, description: e.target.value }))} rows={3} placeholder="What should the leader do?" className={inputCls} />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Assign To</label>
-                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+                <div style={{ background: "rgba(255,255,255,0.05)",border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
                   <select value={taskForm.assigned_to} onChange={(e) => setTaskForm((p) => ({ ...p, assigned_to: e.target.value }))} className={inputCls}>
                     <option value="">Select a leader...</option>
                     {leaders.map((l) => (
@@ -274,7 +281,7 @@ export default function AdminPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Due Date (optional)</label>
-                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+                <div style={{ background: "rgba(255,255,255,0.05)",border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
                   <input type="date" value={taskForm.due_date} onChange={(e) => setTaskForm((p) => ({ ...p, due_date: e.target.value }))} className={inputCls} />
                 </div>
               </div>
@@ -326,13 +333,23 @@ export default function AdminPage() {
           </Link>
           <Link href="/admin/sermons" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
             <Video className="w-4 h-4" /> Sermons
-          </Link>          
+          </Link>
+          {(userRole === "pastor" || userRole === "super_admin") && (
+            <Link href="/admin/members" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+              <UserPlus className="w-4 h-4" /> Members
+            </Link>
+          )}
+          {(userRole === "pastor" || userRole === "super_admin") && (
+            <Link href="/admin/directory" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+              <Users className="w-4 h-4" /> Directory
+            </Link>
+          )}
           {canManageRoles(userRole) && (
             <Link href="/admin/roles" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
               <Shield className="w-4 h-4" /> Roles
             </Link>
           )}
-          <Link href="/admin/settings" className="flex items-center gap-2 text-white/50 hover:text-white text-sm transition-colors">
+          <Link href="/admin/settings" className="flex items-centergap-2 text-white/50 hover:text-white text-sm transition-colors">
             <Settings className="w-4 h-4" /> Settings
           </Link>
           <button
@@ -388,7 +405,7 @@ export default function AdminPage() {
               onClick={() => setShowDeleted(!showDeleted)}
               className="text-xs px-3 py-1.5 rounded-lg transition-colors"
               style={{
-                background: showDeleted ? "rgba(212,175,55,0.15)" : "rgba(239,68,68,0.15)",
+                background: showDeleted ? "rgba(212,175,55,0.15)" :"rgba(239,68,68,0.15)",
                 color: showDeleted ? "#D4AF37" : "#ef4444",
                 border: `1px solid ${showDeleted ? "rgba(212,175,55,0.3)" : "rgba(239,68,68,0.3)"}`,
               }}
@@ -402,8 +419,8 @@ export default function AdminPage() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="p-6 animate-pulse rounded-xl" style={cardStyle}>
-                <div className="h-4 bg-white/10 rounded mb-3 w-1/4" />
+              <div key={i} className="p-6 animate-pulse rounded-xl"style={cardStyle}>
+                <div className="h-4 bg-white/10 rounded mb-3 w-1/4"/>
                 <div className="h-3 bg-white/10 rounded mb-2" />
                 <div className="h-3 bg-white/10 rounded w-3/4" />
               </div>
@@ -432,7 +449,7 @@ export default function AdminPage() {
                       {(row.first_name || row.display_name) && (
                         <p className="font-serif font-bold text-white text-lg">
                           {row.first_name
-                            ? `${row.first_name} ${row.last_name || ""}`
+                            ? `${row.first_name} ${row.last_name ||""}`
                             : (row.display_name as string) || "Anonymous"}
                         </p>
                       )}
@@ -448,16 +465,16 @@ export default function AdminPage() {
                       {row.message && <p className="text-white/70 text-sm mt-2 leading-relaxed">{row.message as string}</p>}
                       {row.category && (
                         <span className="inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full text-[#D4AF37] border border-[#D4AF37]/30">
-                          {(row.category as string).replace(/_/g, " ")}
+                          {(row.category as string).replace(/_/g, "")}
                         </span>
                       )}
                       {row.how_joining && <p className="text-white/40 text-xs">Joining via: {row.how_joining as string}</p>}
                       {row.group_name && <p className="text-white/40 text-xs">Group: {row.group_name as string}</p>}
                       {row.subject && <p className="text-white/40 text-xs">Subject: {row.subject as string}</p>}
                       {row.how_did_you_hear && <p className="text-white/40 text-xs">Heard via: {row.how_did_you_hear as string}</p>}
-                      {row.interests && <p className="text-white/40 text-xs">Interest: {row.interests as string}</p>}
+                      {row.interests && <p className="text-white/40text-xs">Interest: {row.interests as string}</p>}
                       {row.ministry_interests && <p className="text-white/40 text-xs">Serve: {row.ministry_interests as string}</p>}
-                      {row.testimony && <p className="text-white/50 text-xs mt-1 italic">{row.testimony as string}</p>}
+                      {row.testimony && <p className="text-white/50text-xs mt-1 italic">{row.testimony as string}</p>}
                       {row.notes && <p className="text-white/40 text-xs mt-1">Notes: {row.notes as string}</p>}
                       {row.prayer_needs && <p className="text-white/40 text-xs mt-1">Prayer needs: {row.prayer_needs as string}</p>}
                       {row.is_anonymous && <p className="text-white/30 text-xs">Anonymous submission</p>}
@@ -494,7 +511,7 @@ export default function AdminPage() {
                         >
                           {approved
                             ? <><XCircle className="w-3 h-3" /> Unapprove</>
-                            : <><CheckCircle className="w-3 h-3" /> Approve</>}
+                            : <><CheckCircle className="w-3 h-3" />Approve</>}
                         </button>
                       )}
 

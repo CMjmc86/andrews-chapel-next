@@ -121,7 +121,7 @@ export function SiteHeader() {
           {/* Member Login */}
           <div className="hidden xl:flex items-center shrink-0">
             <Link
-              href="/auth"
+              href="/portal"
               className="px-4 py-2 text-sm font-semibold rounded-lg text-[#000D26] hover:opacity-90 transition-opacity whitespace-nowrap"
               style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}
             >
@@ -153,7 +153,7 @@ export function SiteHeader() {
               ))}
               <li className="pt-3 border-t border-white/10 mt-3">
                 <Link
-                  href="/auth"
+                  href="/portal"
                   onClick={() => setMobileOpen(false)}
                   className="block w-full text-center px-4 py-2.5 text-sm font-semibold rounded-lg text-[#000D26]"
                   style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}
