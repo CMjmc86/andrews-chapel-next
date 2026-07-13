@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { getUserRole, type Role } from "@/lib/roles";
+import { getUserRole } from "@/lib/roles";
 import { ArrowLeft, Mail, Phone, Users, Home } from "lucide-react";
 
 type MemberRow = {
