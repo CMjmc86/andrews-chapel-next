@@ -4,13 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { getUserRole } from "@/lib/roles";
 import { ArrowLeft, Mail, Phone, Users, Home } from "lucide-react";
 
-type MemberRow = {
+type DirectoryRow = {
   id: string;
   full_name: string;
-  email: string;
+  email: string | null;
   phone: string | null;
   directory_opt_in: boolean;
 };
@@ -34,8 +33,7 @@ function initials(name: string) {
 export default function PortalDirectoryPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [members, setMembers] = useState<MemberRow[]>([]);
-  const [isStaffView, setIsStaffView] = useState(false);
+  const [members, setMembers] = useState<DirectoryRow[]>([]);
   const [search, setSearch] = useState("");
 
   const loadDirectory = useCallback(async () => {
@@ -47,6 +45,8 @@ export default function PortalDirectoryPage() {
       return;
     }
 
+    // Confirm the signed-in user is actually an approved member
+    // before showing anything (mirrors the check in /portal/account).
     const { data: selfMember } = await supabase
       .from("members")
       .select("status")
@@ -59,25 +59,22 @@ export default function PortalDirectoryPage() {
       return;
     }
 
-    const role = await getUserRole();
-    const staffView = role === "pastor" || role === "super_admin";
-    setIsStaffView(staffView);
-
-    const { data } = await supabase
-      .from("members")
+    // Query the public_directory VIEW instead of the raw members
+    // table. The view already filters to approved + opted-in rows
+    // only, and nulls out email/phone per-row based on each
+    // member's own share_email / share_phone choice — enforced in
+    // the database itself, so unshared values never reach the
+    // browser at all.
+    const { data, error } = await supabase
+      .from("public_directory")
       .select("id, full_name, email, phone, directory_opt_in")
-      .eq("status", "approved")
       .order("full_name", { ascending: true });
 
-    const rows = (data as MemberRow[]) || [];
-    // Non-staff viewers only see opted-in rows. Their own row can
-    // slip through via the "Members can view own record" RLS policy
-    // even when they haven't opted in — filter that out here so the
-    // directory visually matches what they'd expect: if they didn't
-    // opt in, they shouldn't see themselves listed either.
-    const visibleRows = staffView ? rows : rows.filter((m) => m.directory_opt_in);
+    if (error) {
+      console.error("Directory load error:", error);
+    }
 
-    setMembers(visibleRows);
+    setMembers((data as DirectoryRow[]) || []);
     setLoading(false);
   }, [router]);
 
@@ -103,9 +100,7 @@ export default function PortalDirectoryPage() {
             <h1 className="font-serif text-xl font-bold text-white flex items-center gap-2">
               <Users className="w-5 h-5 text-[#D4AF37]" /> Member Directory
             </h1>
-            <p className="text-white/40 text-xs">
-              {isStaffView ? "Showing all approved members" : "Showing members who opted in"}
-            </p>
+            <p className="text-white/40 text-xs">Showing members who opted in</p>
           </div>
         </div>
         <Link href="/" className="text-[#D4AF37] hover:opacity-80 transition-opacity" title="Back to Home">
@@ -153,18 +148,18 @@ export default function PortalDirectoryPage() {
                   <p className="font-serif font-bold text-white truncate">
                     {member.full_name || "Unnamed"}
                   </p>
-                  <p className="text-white/50 text-xs flex items-center gap-1.5 truncate">
-                    <Mail className="w-3 h-3 shrink-0" /> {member.email}
-                  </p>
+                  {member.email && (
+                    <p className="text-white/50 text-xs flex items-center gap-1.5 truncate">
+                      <Mail className="w-3 h-3 shrink-0" /> {member.email}
+                    </p>
+                  )}
                   {member.phone && (
                     <p className="text-white/50 text-xs flex items-center gap-1.5">
                       <Phone className="w-3 h-3 shrink-0" /> {member.phone}
                     </p>
                   )}
-                  {isStaffView && !member.directory_opt_in && (
-                    <p className="text-white/25 text-[10px] uppercase tracking-wider mt-1">
-                      Not opted into public directory
-                    </p>
+                  {!member.email && !member.phone && (
+                    <p className="text-white/25 text-xs italic">No contact info shared</p>
                   )}
                 </div>
               </div>

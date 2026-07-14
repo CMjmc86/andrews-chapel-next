@@ -16,6 +16,8 @@ type Member = {
   phone: string | null;
   status: MemberStatus;
   directory_opt_in: boolean;
+  share_email: boolean;
+  share_phone: boolean;
   created_at: string;
 };
 
@@ -28,11 +30,65 @@ const cardStyle = {
   borderRadius: "1rem",
 };
 
+function formatPhoneNumber(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  const len = digits.length;
+  if (len === 0) return "";
+  if (len < 4) return `(${digits}`;
+  if (len < 7) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function ToggleRow({
+  label,
+  hint,
+  checked,
+  onChange,
+  indent,
+}: {
+  label: string;
+  hint: string;
+  checked: boolean;
+  onChange: () => void;
+  indent?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-4 p-4 rounded-lg ${indent ? "ml-6" : ""}`}
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(212,175,55,0.15)" }}
+    >
+      <div>
+        <p className="text-sm font-medium text-white">{label}</p>
+        <p className="text-white/40 text-xs mt-0.5">{hint}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onChange}
+        className="shrink-0 w-11 h-6 rounded-full relative transition-colors"
+        style={{ background: checked ? "#D4AF37" : "rgba(255,255,255,0.15)" }}
+        aria-pressed={checked}
+        aria-label={label}
+      >
+        <span
+          className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+          style={{ left: checked ? "22px" : "2px" }}
+        />
+      </button>
+    </div>
+  );
+}
+
 export default function PortalAccountPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [member, setMember] = useState<Member | null>(null);
-  const [form, setForm] = useState({ full_name: "", phone: "", directory_opt_in: false });
+  const [form, setForm] = useState({
+    full_name: "",
+    phone: "",
+    directory_opt_in: false,
+    share_email: true,
+    share_phone: true,
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -70,6 +126,8 @@ export default function PortalAccountPage() {
       full_name: memberData.full_name || "",
       phone: memberData.phone || "",
       directory_opt_in: memberData.directory_opt_in,
+      share_email: memberData.share_email,
+      share_phone: memberData.share_phone,
     });
     setLoading(false);
   }, [router]);
@@ -91,6 +149,8 @@ export default function PortalAccountPage() {
         full_name: form.full_name.trim(),
         phone: form.phone.trim() || null,
         directory_opt_in: form.directory_opt_in,
+        share_email: form.share_email,
+        share_phone: form.share_phone,
       })
       .eq("id", member.id);
 
@@ -205,39 +265,41 @@ export default function PortalAccountPage() {
                 <input
                   type="tel"
                   value={form.phone}
-                  onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                  onChange={(e) => setForm((p) => ({ ...p, phone: formatPhoneNumber(e.target.value) }))}
                   className={inputCls}
                   placeholder="(910) 555-0100"
+                  maxLength={14}
+                  inputMode="numeric"
                 />
               </div>
             </div>
 
-            <div
-              className="flex items-center justify-between gap-4 p-4 rounded-lg"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(212,175,55,0.15)" }}
-            >
-              <div className="flex items-start gap-3">
-                <Users className="w-5 h-5 text-[#D4AF37] shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-white">Show me in the member directory</p>
-                  <p className="text-white/40 text-xs mt-0.5">
-                    Other approved members will be able to see your name and contact info.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setForm((p) => ({ ...p, directory_opt_in: !p.directory_opt_in }))}
-                className="shrink-0 w-11 h-6 rounded-full relative transition-colors"
-                style={{ background: form.directory_opt_in ? "#D4AF37" : "rgba(255,255,255,0.15)" }}
-                aria-pressed={form.directory_opt_in}
-                aria-label="Toggle directory visibility"
-              >
-                <span
-                  className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
-                  style={{ left: form.directory_opt_in ? "22px" : "2px" }}
-                />
-              </button>
+            <div className="space-y-3">
+              <ToggleRow
+                label="Show me in the member directory"
+                hint="Turn this on to appear in the directory at all."
+                checked={form.directory_opt_in}
+                onChange={() => setForm((p) => ({ ...p, directory_opt_in: !p.directory_opt_in }))}
+              />
+
+              {form.directory_opt_in && (
+                <>
+                  <ToggleRow
+                    label="Share my email"
+                    hint="Other approved members can see your email address."
+                    checked={form.share_email}
+                    onChange={() => setForm((p) => ({ ...p, share_email: !p.share_email }))}
+                    indent
+                  />
+                  <ToggleRow
+                    label="Share my phone number"
+                    hint="Other approved members can see your phone number."
+                    checked={form.share_phone}
+                    onChange={() => setForm((p) => ({ ...p, share_phone: !p.share_phone }))}
+                    indent
+                  />
+                </>
+              )}
             </div>
 
             <button

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
 
@@ -33,18 +32,24 @@ export default function PortalAuthPage() {
     setSuccess("");
 
     if (mode === "signup") {
-      if (form.password !== form.confirm_password) {
-        setError("Passwords do not match.");
-        setLoading(false);
-        return;
+      const errors: string[] = [];
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!form.full_name.trim()) {
+        errors.push("Please enter your full name.");
+      }
+      if (!emailPattern.test(form.email.trim())) {
+        errors.push("Please enter a valid email address.");
       }
       if (form.password.length < 8) {
-        setError("Password must be at least 8 characters.");
-        setLoading(false);
-        return;
+        errors.push("Password must be at least 8 characters.");
       }
-      if (!form.full_name.trim()) {
-        setError("Please enter your full name.");
+      if (form.password !== form.confirm_password) {
+        errors.push("Passwords do not match.");
+      }
+
+      if (errors.length > 0) {
+        setError(errors.join("\n"));
         setLoading(false);
         return;
       }
@@ -66,10 +71,9 @@ export default function PortalAuthPage() {
       // (handle_new_member) when the auth user is created, so no
       // client-side insert is needed here.
 
-      // NOTE: we intentionally do NOT call switchMode("signin") here,
-      // because switchMode() also resets `success` back to "" as a
-      // side effect of switching tabs, which would wipe this message
-      // out before it ever renders. Set mode/form directly instead.
+      // Switch to sign-in mode WITHOUT going through switchMode(),
+      // since that function also resets `success` — which would wipe
+      // out this exact message before it ever renders.
       setMode("signin");
       setForm({ full_name: "", email: "", password: "", confirm_password: "" });
       setSuccess("Account created! Check your email to confirm your address, then an admin will review and approve your account. You'll be able to sign in once both steps are complete.");
@@ -123,9 +127,6 @@ export default function PortalAuthPage() {
   return (
     <main className="min-h-dvh bg-[#000D26] text-white flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <Link href="/" className="flex items-center gap-1.5 text-white/40 hover:text-[#D4AF37] text-sm mb-6 transition-colors">
-          ← Back to Home
-        </Link>
         <div className="text-center mb-10">
           <div className="w-16 h-16 rounded-full mx-auto mb-4 grid place-items-center" style={{ background: "linear-gradient(135deg, #1A5FE0, #0047CC, #0033A0)" }}>
             <span className="text-[#F0C040] font-bold text-2xl">✛</span>
@@ -162,10 +163,18 @@ export default function PortalAuthPage() {
             {mode === "signin" ? "Welcome Back" : "Create Your Account"}
           </h2>
 
-          {error && <p className="text-red-400 text-sm mb-5 p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
+          {error && (
+            <div className="text-red-400 text-sm mb-5 p-3 rounded-lg bg-red-400/10 border border-red-400/30">
+              <ul className="list-disc list-inside space-y-1">
+                {error.split("\n").map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {success && <p className="text-green-400 text-sm mb-5 p-3 rounded-lg bg-green-400/10 border border-green-400/30">{success}</p>}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} noValidate className="space-y-5">
             {mode === "signup" && (
               <div>
                 <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Full Name</label>
