@@ -13,15 +13,16 @@ const ministryOptions = [
   "Media & Technology", "Other",
 ];
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">
         {label}{required && <span className="text-[#D4AF37] ml-1">*</span>}
       </label>
-      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+      <div style={{ background: "rgba(255,255,255,0.05)", border: error ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
         {children}
       </div>
+      {error && <p className="text-red-400 text-xs mt-1 ml-1">{error}</p>}
     </div>
   );
 }
@@ -45,7 +46,8 @@ function validateBirthdate(dateStr: string): string | null {
 export default function JoinPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""); // general, non-field errors only
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [birthdateError, setBirthdateError] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileRef = useRef<TurnstileInstance>(null);
@@ -73,16 +75,43 @@ export default function JoinPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
+    setFieldErrors({});
+
     if (form.birthdate) {
       const bdErr = validateBirthdate(form.birthdate);
       if (bdErr) { setBirthdateError(bdErr); return; }
     }
+
+    const fe: Record<string, string> = {};
+    if (!form.first_name.trim()) fe.first_name = "Please enter your first name.";
+    if (!form.last_name.trim()) fe.last_name = "Please enter your last name.";
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!form.email.trim()) {
+      fe.email = "Please enter your email address.";
+    } else if (!emailPattern.test(form.email.trim())) {
+      fe.email = "Please enter a valid email address.";
+    }
+    const phoneDigits = form.phone.replace(/\D/g, "");
+    if (!form.phone.trim()) {
+      fe.phone = "Please enter your phone number.";
+    } else if (phoneDigits.length < 10) {
+      fe.phone = "Please enter a complete 10-digit phone number.";
+    }
+    if (!form.birthdate) {
+      fe.birthdate = "Please enter your date of birth.";
+    }
+    if (Object.keys(fe).length > 0) {
+      setFieldErrors(fe);
+      return;
+    }
+
     if (!turnstileToken) {
       setError("Please complete the security check.");
       return;
     }
+
     setLoading(true);
-    setError("");
 
     const verifyRes = await fetch("/api/verify-turnstile", {
       method: "POST",
@@ -126,7 +155,7 @@ export default function JoinPage() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">🙏</div>
         <h2 className="font-serif text-2xl font-bold text-white mb-3">Application Received!</h2>
-        <p className="text-white/60 leading-relaxed">Thank you for your desire to join Andrews Chapel A.M.E. Zion. Pastor Kathy will contact you within 3 business days to discuss next steps. Welcome to the family!</p>
+        <p className="text-white/60 leading-relaxed">Thank you for your desire to joinAndrews Chapel A.M.E. Zion. Pastor Kathy will contact you within 3 business days to discuss next steps. Welcome to the family!</p>
       </div>
     );
   }
@@ -135,20 +164,16 @@ export default function JoinPage() {
     <div>
       <h2 className="font-serif text-2xl font-bold text-white mb-2">Begin Your Membership Journey</h2>
       <p className="text-white/60 mb-8 text-sm leading-relaxed">We&apos;d be honored to walk with you as part of the Andrews Chapel A.M.E. Zion family.</p>
-      {error && <p className="text-red-400 text-sm mb-4 p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} noValidate className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
-          <Field label="First Name" required><input name="first_name" value={form.first_name} onChange={handleChange} required placeholder="First" className={inputCls} /></Field>
-          <Field label="Last Name" required><input name="last_name" value={form.last_name} onChange={handleChange} required placeholder="Last" className={inputCls} /></Field>
+          <Field label="First Name" required error={fieldErrors.first_name}><input name="first_name" value={form.first_name} onChange={handleChange} placeholder="First" className={inputCls} /></Field>
+          <Field label="Last Name" required error={fieldErrors.last_name}><input name="last_name" value={form.last_name} onChange={handleChange} placeholder="Last" className={inputCls} /></Field>
         </div>
-        <Field label="Email Address" required><input name="email" type="email" value={form.email} onChange={handleChange} required placeholder="you@email.com" className={inputCls} /></Field>
-        <Field label="Phone Number"><input name="phone" type="tel" value={form.phone} onChange={handlePhone} placeholder="(910) 555-0100" maxLength={14} className={inputCls} /></Field>
-        <div>
-          <Field label="Date of Birth">
-            <input name="birthdate" type="date" value={form.birthdate} onChange={handleBirthdate} max={new Date().toISOString().split("T")[0]} min={`${new Date().getFullYear() - 120}-01-01`} className={inputCls} />
-          </Field>
-          {birthdateError && <p className="text-red-400 text-xs mt-1 ml-1">{birthdateError}</p>}
-        </div>
+        <Field label="Email Address" required error={fieldErrors.email}><input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputCls} /></Field>
+        <Field label="Phone Number" required error={fieldErrors.phone}><input name="phone" type="tel" value={form.phone} onChange={handlePhone} placeholder="(910) 555-0100" maxLength={14} className={inputCls}/></Field>
+        <Field label="Date of Birth" required error={fieldErrors.birthdate || birthdateError}>
+          <input name="birthdate" type="date" value={form.birthdate} onChange={handleBirthdate} max={new Date().toISOString().split("T")[0]} min={`${new Date().getFullYear() - 120}-01-01`} className={inputCls} />
+        </Field>
         <Field label="Home Address"><input name="address" value={form.address} onChange={handleChange} placeholder="Street, City, State, ZIP" className={inputCls} /></Field>
         <Field label="How are you joining?">
           <select name="how_joining" value={form.how_joining} onChange={handleChange} className={inputCls}>
@@ -161,7 +186,7 @@ export default function JoinPage() {
         </Field>
         <Field label="Previous Church (if any)"><input name="previous_church" value={form.previous_church} onChange={handleChange} placeholder="Name of church" className={inputCls} /></Field>
         <div className="flex items-center gap-3">
-          <input type="checkbox" name="baptized" id="baptized" checked={form.baptized} onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />
+          <input type="checkbox" name="baptized" id="baptized" checked={form.baptized}onChange={handleChange} className="h-4 w-4 accent-[#D4AF37]" />
           <label htmlFor="baptized" className="text-sm text-white/70">I have been baptized</label>
         </div>
         <Field label="Where would you like to serve?">
@@ -172,11 +197,11 @@ export default function JoinPage() {
         </Field>
         {form.ministry_interest === "Other" && (
           <Field label="Please describe where you'd like to serve">
-            <input name="ministry_interest_other" value={form.ministry_interest_other} onChange={handleChange} placeholder="Tell us how you'd like to get involved..." className={inputCls} />
+            <input name="ministry_interest_other" value={form.ministry_interest_other}onChange={handleChange} placeholder="Tell us how you'd like to get involved..." className={inputCls} />
           </Field>
         )}
         <Field label="Briefly share your faith story"><textarea name="testimony" value={form.testimony} onChange={handleChange} rows={4} placeholder="Tell us a little about your journey with God..." className={inputCls} /></Field>
-        <Field label="Additional notes or questions"><textarea name="notes" value={form.notes} onChange={handleChange} rows={3} placeholder="Anything you'd like Pastor Kathy to know..." className={inputCls} /></Field>
+        <Field label="Additional notes or questions"><textarea name="notes" value={form.notes} onChange={handleChange} rows={3} placeholder="Anything you'd like Pastor Kathyto know..." className={inputCls} /></Field>
 
         <Turnstile
           ref={turnstileRef}
@@ -186,7 +211,9 @@ export default function JoinPage() {
           options={{ theme: "dark" }}
         />
 
-        <button type="submit" disabled={loading || !!birthdateError || !turnstileToken} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
+        {error && <p className="text-red-400 text-sm p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
+
+        <button type="submit" disabled={loading || !!birthdateError} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
           {loading ? "Submitting..." : "Submit Application"}
         </button>
       </form>

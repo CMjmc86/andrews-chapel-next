@@ -13,15 +13,16 @@ const interestOptions = [
   "Media & Technology", "Other",
 ];
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">
         {label}{required && <span className="text-[#D4AF37] ml-1">*</span>}
       </label>
-      <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+      <div style={{ background: "rgba(255,255,255,0.05)", border: error ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
         {children}
       </div>
+      {error && <p className="text-red-400 text-xs mt-1 ml-1">{error}</p>}
     </div>
   );
 }
@@ -45,7 +46,8 @@ function validateBirthdate(dateStr: string): string | null {
 export default function VisitorCardPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""); // general, non-field errors only
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [birthdateError, setBirthdateError] = useState("");
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileRef = useRef<TurnstileInstance>(null);
@@ -73,16 +75,36 @@ export default function VisitorCardPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
+    setFieldErrors({});
+
     if (form.birthdate) {
       const bdErr = validateBirthdate(form.birthdate);
       if (bdErr) { setBirthdateError(bdErr); return; }
     }
+
+    const fe: Record<string, string> = {};
+    if (!form.first_name.trim()) fe.first_name = "Please enter your first name.";
+    if (!form.last_name.trim()) fe.last_name = "Please enter your last name.";
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (form.email.trim() && !emailPattern.test(form.email.trim())) {
+      fe.email = "Please enter a valid email address.";
+    }
+    const phoneDigits = form.phone.replace(/\D/g, "");
+    if (phoneDigits.length > 0 && phoneDigits.length < 10) {
+      fe.phone = "Please enter a complete 10-digit phone number.";
+    }
+    if (Object.keys(fe).length > 0) {
+      setFieldErrors(fe);
+      return;
+    }
+
     if (!turnstileToken) {
       setError("Please complete the security check.");
       return;
     }
+
     setLoading(true);
-    setError("");
 
     const verifyRes = await fetch("/api/verify-turnstile", {
       method: "POST",
@@ -134,14 +156,13 @@ export default function VisitorCardPage() {
     <div>
       <h2 className="font-serif text-2xl font-bold text-white mb-2">New Visitor Card</h2>
       <p className="text-white/60 mb-8 text-sm leading-relaxed">First time with us? Fill this out and we&apos;ll make sure to welcome you personally.</p>
-      {error && <p className="text-red-400 text-sm mb-4 p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} noValidate className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
-          <Field label="First Name" required><input name="first_name" value={form.first_name} onChange={handleChange} required placeholder="First" className={inputCls} /></Field>
-          <Field label="Last Name" required><input name="last_name" value={form.last_name} onChange={handleChange} required placeholder="Last" className={inputCls} /></Field>
+          <Field label="First Name" required error={fieldErrors.first_name}><input name="first_name" value={form.first_name} onChange={handleChange} placeholder="First" className={inputCls} /></Field>
+          <Field label="Last Name" required error={fieldErrors.last_name}><input name="last_name" value={form.last_name} onChange={handleChange} placeholder="Last" className={inputCls} /></Field>
         </div>
-        <Field label="Email Address"><input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputCls} /></Field>
-        <Field label="Phone Number"><input name="phone" type="tel" value={form.phone} onChange={handlePhone} placeholder="(910) 555-0100" maxLength={14} className={inputCls} /></Field>
+        <Field label="Email Address" error={fieldErrors.email}><input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputCls} /></Field>
+        <Field label="Phone Number" error={fieldErrors.phone}><input name="phone" type="tel" value={form.phone} onChange={handlePhone} placeholder="(910) 555-0100" maxLength={14} className={inputCls}/></Field>
         <Field label="Home Address"><input name="address" value={form.address} onChange={handleChange} placeholder="Street, City, State, ZIP" className={inputCls} /></Field>
         <div>
           <Field label="Date of Birth">
@@ -190,7 +211,9 @@ export default function VisitorCardPage() {
           options={{ theme: "dark" }}
         />
 
-        <button type="submit" disabled={loading || !!birthdateError || !turnstileToken} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
+        {error && <p className="text-red-400 text-sm p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
+
+        <button type="submit" disabled={loading || !!birthdateError} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
           {loading ? "Submitting..." : "Submit Visitor Card"}
         </button>
       </form>

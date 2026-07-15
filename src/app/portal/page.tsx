@@ -3,14 +3,28 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 const inputCls = "w-full px-4 py-2.5 rounded-lg text-sm text-white bg-transparent placeholder-white/30 outline-none focus:ring-2 focus:ring-[#D4AF37]/50 transition-all";
+
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">{label}</label>
+      <div style={{ background: "rgba(255,255,255,0.05)", border: error ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
+        {children}
+      </div>
+      {error && <p className="text-red-400 text-xs mt-1 ml-1">{error}</p>}
+    </div>
+  );
+}
 
 export default function PortalAuthPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""); // general, non-field errors only
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState("");
   const [form, setForm] = useState({ full_name: "", email: "", password: "", confirm_password: "" });
 
@@ -21,38 +35,38 @@ export default function PortalAuthPage() {
   function switchMode(newMode: "signin" | "signup") {
     setMode(newMode);
     setError("");
+    setFieldErrors({});
     setSuccess("");
     setForm({ full_name: "", email: "", password: "", confirm_password: "" });
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
+    setFieldErrors({});
     setSuccess("");
 
     if (mode === "signup") {
-      const errors: string[] = [];
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+      const fe: Record<string, string> = {};
       if (!form.full_name.trim()) {
-        errors.push("Please enter your full name.");
+        fe.full_name = "Please enter your full name.";
       }
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailPattern.test(form.email.trim())) {
-        errors.push("Please enter a valid email address.");
+        fe.email = "Please enter a valid email address.";
       }
       if (form.password.length < 8) {
-        errors.push("Password must be at least 8 characters.");
+        fe.password = "Password must be at least 8 characters.";
       }
       if (form.password !== form.confirm_password) {
-        errors.push("Passwords do not match.");
+        fe.confirm_password = "Passwords do not match.";
       }
-
-      if (errors.length > 0) {
-        setError(errors.join("\n"));
-        setLoading(false);
+      if (Object.keys(fe).length > 0) {
+        setFieldErrors(fe);
         return;
       }
+
+      setLoading(true);
 
       const { error: sbError } = await supabase.auth.signUp({
         email: form.email,
@@ -71,9 +85,6 @@ export default function PortalAuthPage() {
       // (handle_new_member) when the auth user is created, so no
       // client-side insert is needed here.
 
-      // Switch to sign-in mode WITHOUT going through switchMode(),
-      // since that function also resets `success` — which would wipe
-      // out this exact message before it ever renders.
       setMode("signin");
       setForm({ full_name: "", email: "", password: "", confirm_password: "" });
       setSuccess("Account created! Check your email to confirm your address, then an admin will review and approve your account. You'll be able to sign in once both steps are complete.");
@@ -82,6 +93,22 @@ export default function PortalAuthPage() {
     }
 
     // Sign in
+    const signinErrors: Record<string, string> = {};
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!form.email.trim()) {
+      signinErrors.email = "Please enter your email address.";
+    } else if (!emailPattern.test(form.email.trim())) {
+      signinErrors.email = "Please enter a valid email address.";
+    }
+    if (!form.password) {
+      signinErrors.password = "Please enter your password.";
+    }
+    if (Object.keys(signinErrors).length > 0) {
+      setFieldErrors(signinErrors);
+      return;
+    }
+
+    setLoading(true);
     const { error: sbError } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
@@ -127,6 +154,9 @@ export default function PortalAuthPage() {
   return (
     <main className="min-h-dvh bg-[#000D26] text-white flex items-center justify-center px-4">
       <div className="w-full max-w-md">
+        <Link href="/" className="flex items-center gap-1.5 text-white/40 hover:text-[#D4AF37] text-sm mb-6 transition-colors">
+          ← Back to Home
+        </Link>
         <div className="text-center mb-10">
           <div className="w-16 h-16 rounded-full mx-auto mb-4 grid place-items-center" style={{ background: "linear-gradient(135deg, #1A5FE0, #0047CC, #0033A0)" }}>
             <span className="text-[#F0C040] font-bold text-2xl">✛</span>
@@ -163,46 +193,28 @@ export default function PortalAuthPage() {
             {mode === "signin" ? "Welcome Back" : "Create Your Account"}
           </h2>
 
-          {error && (
-            <div className="text-red-400 text-sm mb-5 p-3 rounded-lg bg-red-400/10 border border-red-400/30">
-              <ul className="list-disc list-inside space-y-1">
-                {error.split("\n").map((line, i) => (
-                  <li key={i}>{line}</li>
-                ))}
-              </ul>
-            </div>
-          )}
           {success && <p className="text-green-400 text-sm mb-5 p-3 rounded-lg bg-green-400/10 border border-green-400/30">{success}</p>}
 
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             {mode === "signup" && (
-              <div>
-                <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Full Name</label>
-                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
-                  <input name="full_name" type="text" value={form.full_name} onChange={handleChange} required placeholder="Jane Doe" className={inputCls} />
-                </div>
-              </div>
+              <Field label="Full Name" error={fieldErrors.full_name}>
+                <input name="full_name" type="text" value={form.full_name} onChange={handleChange} placeholder="Jane Doe" className={inputCls} />
+              </Field>
             )}
-            <div>
-              <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Email Address</label>
-              <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
-                <input name="email" type="email" value={form.email} onChange={handleChange} required placeholder="you@email.com" className={inputCls} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Password</label>
-              <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
-                <input name="password" type="password" value={form.password} onChange={handleChange} required placeholder="••••••••" className={inputCls} />
-              </div>
-            </div>
+            <Field label="Email Address" error={fieldErrors.email}>
+              <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputCls} />
+            </Field>
+            <Field label="Password" error={fieldErrors.password}>
+              <input name="password" type="password" value={form.password} onChange={handleChange} placeholder="••••••••" className={inputCls} />
+            </Field>
             {mode === "signup" && (
-              <div>
-                <label className="block text-xs font-medium text-white/70 mb-1.5 uppercase tracking-wider">Confirm Password</label>
-                <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(212,175,55,0.2)", borderRadius: "0.5rem" }}>
-                  <input name="confirm_password" type="password" value={form.confirm_password} onChange={handleChange} required placeholder="••••••••" className={inputCls} />
-                </div>
-              </div>
+              <Field label="Confirm Password" error={fieldErrors.confirm_password}>
+                <input name="confirm_password" type="password" value={form.confirm_password} onChange={handleChange} placeholder="••••••••" className={inputCls} />
+              </Field>
             )}
+
+            {error && <p className="text-red-400 text-sm p-3 rounded-lg bg-red-400/10 border border-red-400/30">{error}</p>}
+
             <button type="submit" disabled={loading} className="w-full py-3 text-sm font-semibold rounded-full text-[#000D26] hover:opacity-90 transition-opacity disabled:opacity-60 mt-2" style={{ background: "linear-gradient(135deg, #F0C040, #D4AF37, #B8860B)" }}>
               {loading ? (mode === "signin" ? "Signing in..." : "Creating account...") : (mode === "signin" ? "Sign In" : "Create Account")}
             </button>
