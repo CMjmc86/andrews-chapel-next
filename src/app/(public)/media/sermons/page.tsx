@@ -167,7 +167,7 @@ export default function SermonsPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#000D26] text-white">
+    <main className="min-h-dvh bg-[#000D26] text-white">
       <section className="py-16 text-center"
         style={{ background: "radial-gradient(ellipse at top, #001A5C 0%, #000D26 70%)", borderBottom: "1px solid rgba(212,175,55,0.15)" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">

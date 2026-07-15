@@ -236,7 +236,7 @@ export default function AdminPage() {
     (data.praise || []).filter((r) => !r.approved && !r.deleted_at).length;
 
   return (
-    <main className="min-h-screen bg-[#000D26] text-white">
+    <main className="min-h-dvh bg-[#000D26] text-white">
       {/* Task Assignment Modal */}
       {assigningRow && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.7)" }}>

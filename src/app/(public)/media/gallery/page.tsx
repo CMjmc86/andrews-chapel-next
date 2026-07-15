@@ -49,7 +49,7 @@ export default function GalleryPage() {
   const [active, setActive] = useState("All");
 
   return (
-    <main className="min-h-screen bg-[#000D26] text-white">
+    <main className="min-h-dvh bg-[#000D26] text-white">
       <section
         className="py-16 text-center"
         style={{

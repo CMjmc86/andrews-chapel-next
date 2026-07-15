@@ -74,7 +74,7 @@ function ServiceCard({ s }: { s: typeof services[0] }) {
 
 export default function WorshipServicesPage() {
   return (
-    <main className="min-h-screen bg-[#000D26] text-white">
+    <main className="min-h-dvh bg-[#000D26] text-white">
       <section
         className="py-16 text-center"
         style={{

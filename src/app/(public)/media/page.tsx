@@ -88,7 +88,7 @@ function MediaCard({ href, icon: Icon, title, description }: {
 
 export default function MediaPage() {
   return (
-    <main className="min-h-screen bg-[#000D26] text-white">
+    <main className="min-h-dvh bg-[#000D26] text-white">
       <section
         className="py-16 text-center"
         style={{

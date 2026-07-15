@@ -24,7 +24,7 @@ const initiatives = [
 
 export default function MissionaryFundPage() {
   return (
-    <main className="min-h-screen bg-[#000D26] text-white">
+    <main className="min-h-dvh bg-[#000D26] text-white">
       {/* Hero */}
       <section
         className="py-16 text-center"

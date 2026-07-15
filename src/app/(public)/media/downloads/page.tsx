@@ -70,7 +70,7 @@ function DownloadItem({ item }: { item: { name: string; file: string } }) {
 
 export default function DownloadsPage() {
   return (
-    <main className="min-h-screen bg-[#000D26] text-white">
+    <main className="min-h-dvh bg-[#000D26] text-white">
       <section
         className="py-16 text-center"
         style={{

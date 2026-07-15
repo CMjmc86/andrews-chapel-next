@@ -145,7 +145,7 @@ export default function TasksPage() {
   if (!userRole) return null;
 
   return (
-    <main className="min-h-screen bg-[#000D26] text-white">
+    <main className="min-h-dvh bg-[#000D26] text-white">
       <header
         className="px-6 py-4 flex items-center justify-between"
         style={{ borderBottom: "1px solid rgba(212,175,55,0.15)", background: "rgba(16,36,96,0.5)" }}
