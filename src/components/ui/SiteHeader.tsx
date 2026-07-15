@@ -92,16 +92,16 @@ export function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#000D26]/95 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-20 items-center justify-between gap-4">
-
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 shrink-0">
-            <div
-              className="grid h-11 w-11 place-items-center rounded-full shrink-0"
-              style={{ background: "linear-gradient(135deg, #1A5FE0, #0047CC, #0033A0)" }}
-            >
-              <span className="text-[#F0C040] font-bold text-lg leading-none">✛</span>
+           <div className="h-11 w-11 shrink-0">
+              <img
+                src="/images/amez-triangle.png"
+                alt="African Methodist Episcopal Zion Church"
+                className="h-full w-full object-contain"
+              />
             </div>
-            <div className="leading-tight">
+            <div className="leading-tight text-center">
               <div className="font-serif text-base font-bold tracking-tight text-white sm:text-lg">
                 Andrews Chapel
               </div>

@@ -44,10 +44,14 @@ export function SiteFooter() {
           {/* ── Brand ── */}
           <div>
             <div className="flex items-center gap-3 mb-5">
-              <div className="grid h-12 w-12 place-items-center rounded-xl shrink-0" style={{ background: "linear-gradient(135deg, #1A5FE0, #0047CC, #0033A0)" }}>
-                <span className="text-[#F0C040] font-bold text-xl">✛</span>
+              <div className="h-12 w-12 shrink-0">
+                <img
+                  src="/images/amez-triangle.png"
+                  alt="African Methodist Episcopal Zion Church"
+                  className="h-full w-full object-contain"
+                />
               </div>
-              <div className="leading-tight">
+              <div className="leading-tight text-center">
                 <div className="font-serif text-xl font-bold text-white">Andrews Chapel A.M.E. Zion</div>
                 <div className="text-xs text-[#D4AF37] mt-0.5">✛ Church Family &amp; Pastor Kathy Grace ✛</div>
               </div>
