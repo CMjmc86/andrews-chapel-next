@@ -96,7 +96,7 @@ export function SiteHeader() {
           <Link href="/" className="flex items-center gap-3 shrink-0">
            <div className="h-11 w-11 shrink-0">
               <img
-                src="/images/amez-triangle.png"
+                src="/images/amez-triangle-logo.png"
                 alt="African Methodist Episcopal Zion Church"
                 className="h-full w-full object-contain"
               />

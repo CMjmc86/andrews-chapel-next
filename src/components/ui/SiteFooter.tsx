@@ -46,7 +46,7 @@ export function SiteFooter() {
             <div className="flex items-center gap-3 mb-5">
               <div className="h-12 w-12 shrink-0">
                 <img
-                  src="/images/amez-triangle.png"
+                  src="/images/amez-triangle-logo.png"
                   alt="African Methodist Episcopal Zion Church"
                   className="h-full w-full object-contain"
                 />

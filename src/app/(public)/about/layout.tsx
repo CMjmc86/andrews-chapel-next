@@ -1,18 +1,14 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
 const tabs = [
   { href: "/about/our-story", label: "Our Story" },
   { href: "/about/what-we-believe", label: "What We Believe" },
   { href: "/about/leadership", label: "Leadership" },
   { href: "/about/ame-zion-heritage", label: "AME Zion Heritage" },
 ];
-
 export default function AboutLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
   return (
     <>
       <section
@@ -30,17 +26,16 @@ export default function AboutLayout({ children }: { children: React.ReactNode })
           </p>
         </div>
       </section>
-
-      <div className="border-b" style={{ borderColor: "rgba(212,175,55,0.15)", background: "#000D26" }}>
+      <div className="border-b" style={{ borderColor: "rgba(212,175,55,0.15)", background:"#000D26" }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <nav className="flex gap-1 overflow-x-auto -mb-px scrollbar-hide sm:justify-center">
+          <nav className="flex flex-wrap sm:flex-nowrap gap-x-1 gap-y-0 justify-center">
             {tabs.map((tab) => {
               const isActive = pathname === tab.href;
               return (
                 <Link
                   key={tab.href}
                   href={tab.href}
-                  className="px-3 sm:px-5 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0"
+                  className="px-3 sm:px-5 py-3 sm:py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors"
                   style={{
                     color: isActive ? "#D4AF37" : "rgba(255,255,255,0.6)",
                     borderBottomColor: isActive ? "#D4AF37" : "transparent",
@@ -53,7 +48,6 @@ export default function AboutLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
       </div>
-
       <section className="py-10 sm:py-14">
         <div className="mx-auto max-w-5xl px-6 sm:px-16">{children}</div>
       </section>
