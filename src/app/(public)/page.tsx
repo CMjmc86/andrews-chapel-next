@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HeroCarousel from "@/components/ui/HeroCarousel";
 import {
   HeartHandshake,
   HandCoins,
@@ -39,10 +40,8 @@ export default function Home() {
       {/* ── 1. HERO ───────────────────────────────────────────────── */}
       <section
         className="relative overflow-hidden min-h-[85vh] flex items-center"
-        style={{
-          background: "radial-gradient(ellipse at top, #001A5C 0%, #000D26 70%)",
-        }}
       >
+        <HeroCarousel />
         {/* Glow overlays */}
         <div
           className="absolute inset-0 pointer-events-none"
