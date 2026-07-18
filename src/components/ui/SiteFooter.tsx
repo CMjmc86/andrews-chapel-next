@@ -162,7 +162,12 @@ export function SiteFooter() {
           className="mt-14 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40"
           style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
         >
-          <span>&copy; 2026 Andrews Chapel A.M.E. Zion Church. All rights reserved.</span>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+            <span>&copy; 2026 Andrews Chapel A.M.E. Zion Church. All rights reserved.</span>
+            <Link href="/privacy-policy" className="hover:text-[#D4AF37] transition-colors">
+              Privacy Policy
+            </Link>
+          </div>
           <div className="flex gap-4">
             {socials.map(({ label, href, svg }) => (
               <a
