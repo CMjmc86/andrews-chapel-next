@@ -1,7 +1,39 @@
 # Project Status
 
-Last updated: November 19, 2026. Update this file whenever significant work is completed or new
+Last updated: November 20, 2026. Update this file whenever significant work is completed or new
 issues are found — it's the source of truth for "where did we leave off."
+
+---
+
+## 📍 Checkpoint — where we left off (November 20, 2026)
+
+**Done this session (all committed and pushed):**
+- `/api/notify` rewritten and deployed; praise-report notification email verified end to end
+- `STAFF_NOTIFY_EMAIL` added in Vercel (Secret, Preview + Production) and `.env.local`
+- Real form submissions verified (prayer request + praise report landed as pending in admin)
+- `admin_roles` checked: only the owner's row, so the add-role hole was never used
+- Schema docs rewritten from the live database (`01`–`04` in `supabase/schema/`)
+
+**Decisions made:**
+- Register the domain at **Cloudflare** (at-cost pricing, free WHOIS privacy, already used for Turnstile)
+- Use ONE **shared church-owned Gmail** (not personal, not on the new domain) for the registrar,
+  Vercel, Supabase, Resend, Sentry and social accounts. Turn on authenticator-app 2-step
+  verification, add a second recovery person, and keep a written list of which service uses
+  which email.
+
+**Next steps, in order:**
+1. Create the shared Gmail account (e.g. `andrewschapelame.tech@gmail.com`)
+2. Register `andrewschapelame.org` at Cloudflare under it (check availability and price first)
+3. Verify the domain with Resend, then switch `FROM_ADDRESS` / `NOTIFY_FROM_ADDRESS` and the
+   Supabase SMTP sender; do the rest of the "domain follow-through" list below
+4. Supabase plan decision (Free auto-pauses; Pro ~$25/month)
+5. Real staff accounts for Pastor Kathy and leaders; then test task-assignment emails
+6. Server-side Turnstile + rate limiting, then enable `ENABLE_SUBMITTER_EMAILS`
+7. Remaining launch blockers: Sentry, test-data cleanup, Community Outreach/Missionary pages,
+   privacy policy review
+
+**Optional small items:** run the constraints query at the bottom of `01_tables.sql` and paste
+results in; pin `search_path` on `is_super_admin()` and capture its definition.
 
 ---
 
@@ -67,7 +99,7 @@ issues are found — it's the source of truth for "where did we leave off."
 8. **Remove test data** (`sqltestmember@example.com` and any test submissions) so it doesn't
    appear in the directory or admin views. Do this right before launch, after UAT.
 9. **Community Outreach & Missionary Fund pages.** Placeholders that just route to `/give`.
-10. **404 page.** Not yet checked whether it shows something reasonable.
+10. ~~**404 page.**~~ ✅ Done November 20, 2026: branded `src/app/not-found.tsx` (navy/gold, links home).
 11. **Privacy policy review.** Written as a plain-language starting point, not reviewed by a
     lawyer. It names specific services (Supabase, Resend, Turnstile, Vercel), so update it if
     those change.
@@ -91,6 +123,22 @@ issues are found — it's the source of truth for "where did we leave off."
 - **`sermons.youtube_id` is NOT NULL**, but `audio_url` and `facebook_url` exist and the admin
   page types `youtube_id` as optional. A sermon with no YouTube video probably can't be
   saved. Try one; fix if it fails.
+- **About section content (added November 20, 2026):**
+  - **DOUBLE-CHECK THE CHURCH HISTORY BEFORE OFFICIALLY LAUNCHING THE SITE.** The new Our Story
+    timeline and the A.M.E. Zion in North Carolina section are already committed (live as a
+    draft), but the facts came from an AI summary, not a church record. Have Pastor Kathy / church
+    historians confirm: the 1870 founding and "Bush Wack" nickname, trustee names and spellings,
+    the tornado, the Mrs. Andrews naming story, the 1943 rally, and the Conference and
+    heritage-tour details. Also confirm the Bishop Hood / Zion Wesley Institute (1879) details.
+    Drafts have `// VERIFY` comments in the code. Do not announce the site to the congregation
+    until this is done.
+  - **Confirm Rev. Janet Mitchell's and Rev. Sarah Bass's exact titles** (currently "Minister"),
+    and get short bios.
+  - **Confirm "two years"** as Pastor Kathy's time at Andrews Chapel (shortened bio).
+  - **Photos:** headshots for Pastor Kathy, Rev. Mitchell, and Rev. Bass go in
+    `public/images/leadership/` (JPG/PNG/WebP, not HEIC), then set `photo:` in the leadership
+    page's `team` list. Initials/icons show until then.
+  - **Missionaries card:** deliberately left off for now; add with a confirmed description.
 - **Favicon.** Generated from the AME Zion triangle logo (`favicon.ico`,
   `apple-touch-icon.png`) but NOT applied, because the final logo isn't confirmed.
 
@@ -173,6 +221,11 @@ Goal: make the project easy for another developer to pick up.
 ---
 
 ## 🟢 After Launch
+
+**Leadership page:** make the leadership cards clickable (expand-in-place or pop-up panel with a
+fuller bio, larger photo, and contact details; a separate page per person/group only if bios get
+long). Groups could later show their member names and photos too. The current `team` list in
+`about/leadership/page.tsx` can take this without a rebuild.
 
 **Admin:** clickable mailto links on submitter emails; confirm the Roles link shows only for
 `super_admin`
