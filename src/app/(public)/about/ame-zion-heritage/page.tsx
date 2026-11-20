@@ -1,3 +1,23 @@
+// VERIFY items: facts from an AI summary — confirm before launch.
+const ncHighlights = [
+  {
+    title: "Growth after the Civil War",
+    text: "Before emancipation, the A.M.E. Zion Church had little room to organize across most of the South. When the war ended, it grew rapidly from a mostly Northern denomination into a Southern one, with North Carolina becoming one of its strongest anchors.",
+  },
+  {
+    title: "Bishop James Walker Hood",
+    text: "Born in Pennsylvania, Hood came to North Carolina during the Civil War as a missionary. He helped bring independent Black congregations — beginning along the coast — into the A.M.E. Zion connection, and he and other missionaries carried the work westward across the state.", // VERIFY: arrival year omitted on purpose
+  },
+  {
+    title: "From Brush Arbors to Church Buildings",
+    text: "Newly freed people had almost no money or property, so many congregations — Andrews Chapel included — first met under brush arbors: open-air shelters of wooden posts and tree branches. As funds were raised, these were replaced by timber-frame churches that also served as schools, meeting houses, and burial grounds.",
+  },
+  {
+    title: "A Commitment to Education",
+    text: "Church basements and fellowship halls often housed the first schools for children and adults. In 1879, Dr. Joseph Charles Price and Bishop Hood helped establish Zion Wesley Institute, known today as Livingstone College and Hood Theological Seminary in Salisbury.", // VERIFY: 1879 and names
+  },
+];
+
 export default function AMEZionHeritage() {
   return (
     <div>
@@ -51,6 +71,33 @@ export default function AMEZionHeritage() {
             >
               <div className="font-semibold text-white text-sm">{p.name}</div>
               <div className="text-white/50 text-xs mt-0.5">{p.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* A.M.E. Zion in North Carolina */}
+      <div className="mb-10">
+        <h3 className="font-serif text-xl font-semibold text-white mb-2">
+          The Freedom Church in North Carolina
+        </h3>
+        <p className="text-white/60 text-sm leading-relaxed mb-5">
+          Andrews Chapel was born in the era when the A.M.E. Zion Church flourished across North
+          Carolina. Our own beginnings, under a brush shelter in 1870, are part of this larger story.
+        </p>
+        <div className="space-y-4">
+          {ncHighlights.map((h) => (
+            <div
+              key={h.title}
+              className="p-5 rounded-lg"
+              style={{
+                background: "linear-gradient(135deg, #102460 0%, #0a1840 100%)",
+                border: "1px solid rgba(212,175,55,0.15)",
+                borderLeft: "4px solid #D4AF37",
+              }}
+            >
+              <div className="font-semibold text-white text-sm mb-1.5">{h.title}</div>
+              <p className="text-white/60 text-sm leading-relaxed">{h.text}</p>
             </div>
           ))}
         </div>
