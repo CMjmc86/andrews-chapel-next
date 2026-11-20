@@ -29,7 +29,7 @@ issues are found — it's the source of truth for "where did we leave off."
 4. Supabase plan decision (Free auto-pauses; Pro ~$25/month)
 5. Real staff accounts for Pastor Kathy and leaders; then test task-assignment emails
 6. Server-side Turnstile + rate limiting, then enable `ENABLE_SUBMITTER_EMAILS`
-7. Remaining launch blockers: Sentry, test-data cleanup, Community Outreach/Missionary pages,
+7. Remaining launch blockers: test-data cleanup, Community Outreach/Missionary pages,
    privacy policy review
 
 **Optional small items:** run the constraints query at the bottom of `01_tables.sql` and paste
@@ -91,9 +91,13 @@ results in; pin `search_path` on `is_super_admin()` and capture its definition.
 5. **Environment variables on Vercel.** Vercel doesn't read `.env.local`. Confirm each is set
    for Production: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
    `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`,
-   `RESEND_API_KEY`, `STAFF_NOTIFY_EMAIL` (new). Sentry variable names still unconfirmed.
-6. **Sentry.** The trial was ending in July. Check its current state and downgrade to the
-   free Developer tier if needed (done in Sentry's dashboard, not in code).
+   `RESEND_API_KEY`, `STAFF_NOTIFY_EMAIL` (new). Sentry needs none (key is in its config files).
+6. ~~**Sentry.**~~ ✅ Done November 20, 2026: account is on the free Developer plan (no
+   charges). Error capture verified with a temporary test route (event arrived in project
+   `andrews-chapel`, environment "development"). The project key is in the Sentry config files
+   (`sentry.server.config.ts`, `sentry.edge.config.ts`, `src/instrumentation-client.ts`), so there
+   are NO Sentry environment variables to set in Vercel. Real production errors will show with
+   environment "production".
 7. **Real staff accounts.** Pastor Kathy and the other admins need real `/auth` accounts with
    the correct roles (currently only developer/test accounts exist).
 8. **Remove test data** (`sqltestmember@example.com` and any test submissions) so it doesn't
