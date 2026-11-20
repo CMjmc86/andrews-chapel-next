@@ -15,7 +15,7 @@ Official website for Andrews Chapel A.M.E. Zion Church, Bunnlevel, NC. Pastor Ka
 - **Database & Auth:** Supabase (Postgres + Auth, cookie-based sessions via `@supabase/ssr`)
 - **Hosting:** Vercel
 - **Transactional Email:** Resend
-- **Bot Protection:** Cloudflare Turnstile (on all public forms)
+- **Bot Protection:** Cloudflare Turnstile (client widget on the Get Connected forms, Prayer Wall submit and Praise Reports; Give not yet audited. NOT yet enforced server-side — see PROJECT_STATUS.md)
 - **Error Monitoring:** Sentry
 - **Analytics:** Vercel Web Analytics
 
@@ -37,10 +37,16 @@ Create a `.env.local` file in the project root:
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=          # server-only, used in /api/admin/add-role
-RESEND_API_KEY=                      # or configured directly in Supabase SMTP settings
+SUPABASE_SERVICE_ROLE_KEY=          # server-only: /api/admin/add-role, /api/notify
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=
-TURNSTILE_SECRET_KEY=
+TURNSTILE_SECRET_KEY=               # server-only: /api/verify-turnstile
+RESEND_API_KEY=                     # server-only: /api/notify
+STAFF_NOTIFY_EMAIL=                 # where staff alert emails go
+# Optional:
+# NOTIFY_FROM_ADDRESS=              # defaults to onboarding@resend.dev until the domain is verified
+# ENABLE_SUBMITTER_EMAILS=true      # thank-you emails to form submitters; leave off until
+#                                   # the Resend domain is verified and rate limiting exists
+# Sentry variable names: not yet confirmed (grep -rn "process.env" src/)
 ```
 
 Ask the project owner for actual values — never commit real keys to the repo.
@@ -57,7 +63,7 @@ src/
 │   ├── admin/                  # Staff dashboard (requires admin_roles entry)
 │   ├── portal/                 # Member portal (requires approved members entry)
 │   ├── auth/                   # Staff sign in/up + forgot password
-│   ├── api/                    # Server-side API routes (notify, verify-turnstile, admin/add-role)
+│   ├── api/                    # Server-side API routes (notify, verify-turnstile, admin/add-role). `middleware.ts` does NOT cover /api/* — every route must check the caller itself
 ├── components/ui/              # Shared UI components (SiteHeader, SiteFooter, HeroCarousel)
 ├── lib/
 │   ├── supabase.ts             # The ONE shared Supabase client (cookie-based). Always import
@@ -100,9 +106,10 @@ service-role API routes. Multiple separate client instances previously caused re
 
 ## Database
 
-Schema and RLS policies currently live in the Supabase dashboard. Migration files tracking
-this in the repo are planned — see PROJECT_STATUS.md. Until then, the source of truth is
-the live Supabase project.
+The schema is documented in `supabase/schema/` — tables, RLS policies, triggers, and views.
+See that folder's README for exactly what has and hasn't been verified against the live
+database. The live Supabase project remains the source of truth: if the docs and the
+database disagree, trust the database and fix the docs.
 
 **Key tables:** `prayer_requests`, `praise_reports`, `visitor_cards`, `join_applications`,
 `pastor_messages`, `connect_group_signups`, `admin_roles`, `members`, `tasks`, `bulletins`,
@@ -113,7 +120,9 @@ the live Supabase project.
 enforced via `exists (select 1 from admin_roles where user_id = auth.uid() and role in (...))`
 policies — not just `auth.role() = 'authenticated'`, which was a real vulnerability found
 and fixed (any signed-in user, including pending members, could previously read/write staff
-data). See PROJECT_STATUS.md for full history.
+data). Never use `auth.uid() IS NOT NULL` or `auth.role() = 'authenticated'` as an
+authorization check. Anyone can create an account, so "signed in" does not mean "staff".
+See PROJECT_STATUS.md for full history.
 
 ---
 
